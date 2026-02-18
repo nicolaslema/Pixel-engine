@@ -3,7 +3,7 @@ import { Renderer } from "../renderers/Renderer";
 import { PixelCell } from "./PixelCell";
 import { PixelEngine } from "../core/PixelEngine";
 
-import { Influence } from "../influences/Influence";
+import { InfluenceManager } from "../influences/InfluenceManager";
 import { RippleInfluence } from "../influences/RippleInfluence";
 import { HoverInfluence } from "../influences/HoverInfluence";
 import { OrganicNoiseInfluence } from "../influences/OrganicNoiseInfluence";
@@ -19,6 +19,7 @@ export interface PixelGridConfig {
   rippleStrength: number;
 
   hoverRadius?: number;
+
   organicRadius?: number;
   organicStrength?: number;
   organicSpeed?: number;
@@ -34,13 +35,11 @@ export interface PixelGridInfluenceOptions {
 
 export class PixelGridEffect extends Entity {
   private cells: PixelCell[] = [];
-  private influences: Influence[] = [];
-
   private columns: number;
   private rows: number;
 
-  private readonly gap: number;
-  private readonly maxRipples: number;
+  private influenceManager: InfluenceManager;
+  private maxRipples: number;
 
   constructor(
     private engine: PixelEngine,
@@ -55,32 +54,34 @@ export class PixelGridEffect extends Entity {
   ) {
     super();
 
-    this.gap = config.gap;
-    this.columns = Math.ceil(width / this.gap);
-    this.rows = Math.ceil(height / this.gap);
+    this.columns = Math.ceil(width / config.gap);
+    this.rows = Math.ceil(height / config.gap);
     this.maxRipples = config.maxRipples ?? 20;
 
     this.createGrid();
+
+    this.influenceManager = new InfluenceManager(
+      config.gap,
+      this.columns,
+      this.rows
+    );
+
     this.setupInfluences();
   }
 
-  // =========================
-  // GRID
-  // =========================
-
   private createGrid(): void {
-    const { colors } = this.config;
+    const { colors, gap } = this.config;
 
     for (let x = 0; x < this.columns; x++) {
       for (let y = 0; y < this.rows; y++) {
-        const px = x * this.gap;
-        const py = y * this.gap;
+        const px = x * gap;
+        const py = y * gap;
 
         const color =
           colors[Math.floor(Math.random() * colors.length)];
 
         this.cells.push(
-          new PixelCell(px, py, color, this.gap, 1)
+          new PixelCell(px, py, color, gap, 1)
         );
       }
     }
@@ -90,18 +91,9 @@ export class PixelGridEffect extends Entity {
     return x * this.rows + y;
   }
 
-  // =========================
-  // INFLUENCES SETUP
-  // =========================
-
   private setupInfluences(): void {
-    const {
-      hover,
-      organic
-    } = this.influenceOptions;
-
-    if (hover) {
-      this.influences.push(
+    if (this.influenceOptions.hover) {
+      this.influenceManager.add(
         new HoverInfluence(
           this.engine,
           this.config.hoverRadius ?? 120,
@@ -111,8 +103,8 @@ export class PixelGridEffect extends Entity {
       );
     }
 
-    if (organic) {
-      this.influences.push(
+    if (this.influenceOptions.organic) {
+      this.influenceManager.add(
         new OrganicNoiseInfluence(
           this.width * 0.5,
           this.height * 0.5,
@@ -124,10 +116,6 @@ export class PixelGridEffect extends Entity {
     }
   }
 
-  // =========================
-  // UPDATE
-  // =========================
-
   update(delta: number): void {
     // Reset targets
     for (let i = 0; i < this.cells.length; i++) {
@@ -135,56 +123,15 @@ export class PixelGridEffect extends Entity {
     }
 
     // Update influences
-    for (let i = 0; i < this.influences.length; i++) {
-      this.influences[i].update(delta);
-    }
-
-    this.influences =
-      this.influences.filter(i => i.isAlive());
+    this.influenceManager.update(delta);
 
     // Apply influences
-    for (let i = 0; i < this.influences.length; i++) {
-      const influence = this.influences[i];
-      const bounds = influence.getBounds();
+    this.influenceManager.apply(
+      this.cells,
+      this.getCellIndex.bind(this)
+    );
 
-      const minCol = Math.max(
-        0,
-        Math.floor(bounds.minX / this.gap)
-      );
-      const maxCol = Math.min(
-        this.columns - 1,
-        Math.floor(bounds.maxX / this.gap)
-      );
-
-      const minRow = Math.max(
-        0,
-        Math.floor(bounds.minY / this.gap)
-      );
-      const maxRow = Math.min(
-        this.rows - 1,
-        Math.floor(bounds.maxY / this.gap)
-      );
-
-      for (let x = minCol; x <= maxCol; x++) {
-        for (let y = minRow; y <= maxRow; y++) {
-          const cell =
-            this.cells[this.getCellIndex(x, y)];
-
-          const value =
-            influence.getInfluence(
-              cell.x,
-              cell.y,
-              cell.maxSize
-            );
-
-          if (value > cell.targetSize) {
-            cell.targetSize = value;
-          }
-        }
-      }
-    }
-
-    // Animate
+    // Animate cells
     for (let i = 0; i < this.cells.length; i++) {
       this.cells[i].update(
         this.config.expandEase,
@@ -192,10 +139,6 @@ export class PixelGridEffect extends Entity {
       );
     }
   }
-
-  // =========================
-  // RENDER
-  // =========================
 
   render(renderer: Renderer): void {
     const ctx = renderer.getContext();
@@ -233,28 +176,13 @@ export class PixelGridEffect extends Entity {
     });
   }
 
-  // =========================
-  // EXTERNAL API
-  // =========================
-
   triggerRipple(x: number, y: number): void {
     if (!this.influenceOptions.ripple) return;
 
     const maxRadius =
       Math.max(this.width, this.height) * 1.2;
 
-    // limitar cantidad de ripples
-    const rippleCount = this.influences.filter(
-      i => i instanceof RippleInfluence
-    ).length;
-
-    if (rippleCount >= this.maxRipples) {
-      this.influences = this.influences.filter(
-        i => !(i instanceof RippleInfluence)
-      ).slice(1);
-    }
-
-    this.influences.push(
+    this.influenceManager.add(
       new RippleInfluence(
         x,
         y,

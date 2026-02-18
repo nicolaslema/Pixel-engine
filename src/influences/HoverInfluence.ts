@@ -4,6 +4,8 @@ import { PixelEngine } from "../core/PixelEngine";
 export class HoverInfluence implements Influence {
   private hoverAmount = 0;
   private hoverTarget = 0;
+  priority = 5;
+  blendMode: "add" = "add";
 
   constructor(
     private engine: PixelEngine,

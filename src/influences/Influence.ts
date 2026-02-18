@@ -1,4 +1,13 @@
+export type BlendMode =
+  | "max"
+  | "add"
+  | "override"
+  | "multiply";
+
 export interface Influence {
+  priority: number;
+  blendMode: BlendMode;
+
   update(delta: number): void;
 
   getBounds(): {

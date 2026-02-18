@@ -2,6 +2,8 @@ import { Influence } from "./Influence";
 
 export class RippleInfluence implements Influence {
   private radius = 0;
+  priority = 10;
+  blendMode: "max" = "max";
 
   constructor(
     private x: number,

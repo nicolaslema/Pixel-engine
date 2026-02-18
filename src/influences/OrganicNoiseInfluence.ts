@@ -2,6 +2,8 @@ import { Influence } from "./Influence";
 
 export class OrganicNoiseInfluence implements Influence {
   private time = 0;
+  priority = 1;
+  blendMode: "add" = "add";
 
   constructor(
     private x: number,
