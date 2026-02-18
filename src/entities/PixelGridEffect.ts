@@ -3,135 +3,266 @@ import { Renderer } from "../renderers/Renderer";
 import { PixelCell } from "./PixelCell";
 import { PixelEngine } from "../core/PixelEngine";
 
-interface Ripple {
-  x: number;
-  y: number;
-  radius: number;
-}
+import { Influence } from "../influences/Influence";
+import { RippleInfluence } from "../influences/RippleInfluence";
+import { HoverInfluence } from "../influences/HoverInfluence";
+import { OrganicNoiseInfluence } from "../influences/OrganicNoiseInfluence";
 
 export interface PixelGridConfig {
   colors: string[];
   gap: number;
   expandEase: number;
   breathSpeed: number;
-  shimmerOpacityStrength: number;
+
   rippleSpeed: number;
   rippleThickness: number;
   rippleStrength: number;
+
+  hoverRadius?: number;
+  organicRadius?: number;
+  organicStrength?: number;
+  organicSpeed?: number;
+
+  maxRipples?: number;
+}
+
+export interface PixelGridInfluenceOptions {
+  ripple?: boolean;
+  hover?: boolean;
+  organic?: boolean;
 }
 
 export class PixelGridEffect extends Entity {
   private cells: PixelCell[] = [];
-  private ripples: Ripple[] = [];
+  private influences: Influence[] = [];
 
-  private hoverAmount = 0;
-  private hoverTarget = 0;
+  private columns: number;
+  private rows: number;
+
+  private readonly gap: number;
+  private readonly maxRipples: number;
 
   constructor(
     private engine: PixelEngine,
     private width: number,
     private height: number,
-    private config: PixelGridConfig
+    private config: PixelGridConfig,
+    private influenceOptions: PixelGridInfluenceOptions = {
+      ripple: true,
+      hover: true,
+      organic: false
+    }
   ) {
     super();
+
+    this.gap = config.gap;
+    this.columns = Math.ceil(width / this.gap);
+    this.rows = Math.ceil(height / this.gap);
+    this.maxRipples = config.maxRipples ?? 20;
+
     this.createGrid();
+    this.setupInfluences();
   }
 
-  private createGrid(): void {
-    const { gap, colors } = this.config;
+  // =========================
+  // GRID
+  // =========================
 
-    for (let x = 0; x < this.width; x += gap) {
-      for (let y = 0; y < this.height; y += gap) {
+  private createGrid(): void {
+    const { colors } = this.config;
+
+    for (let x = 0; x < this.columns; x++) {
+      for (let y = 0; y < this.rows; y++) {
+        const px = x * this.gap;
+        const py = y * this.gap;
+
         const color =
           colors[Math.floor(Math.random() * colors.length)];
 
         this.cells.push(
-          new PixelCell(x, y, color, gap, 1)
+          new PixelCell(px, py, color, this.gap, 1)
         );
       }
     }
   }
 
+  private getCellIndex(x: number, y: number): number {
+    return x * this.rows + y;
+  }
+
+  // =========================
+  // INFLUENCES SETUP
+  // =========================
+
+  private setupInfluences(): void {
+    const {
+      hover,
+      organic
+    } = this.influenceOptions;
+
+    if (hover) {
+      this.influences.push(
+        new HoverInfluence(
+          this.engine,
+          this.config.hoverRadius ?? 120,
+          this.config.breathSpeed,
+          1
+        )
+      );
+    }
+
+    if (organic) {
+      this.influences.push(
+        new OrganicNoiseInfluence(
+          this.width * 0.5,
+          this.height * 0.5,
+          this.config.organicRadius ?? 150,
+          this.config.organicStrength ?? 0.4,
+          this.config.organicSpeed ?? 0.002
+        )
+      );
+    }
+  }
+
+  // =========================
+  // UPDATE
+  // =========================
+
   update(delta: number): void {
-    const mouse = this.engine.getInput().getMouse();
+    // Reset targets
+    for (let i = 0; i < this.cells.length; i++) {
+      this.cells[i].targetSize = 0;
+    }
 
-    this.hoverTarget = mouse.x >= 0 ? 1 : 0;
-    this.hoverAmount += (this.hoverTarget - this.hoverAmount) * 0.08;
+    // Update influences
+    for (let i = 0; i < this.influences.length; i++) {
+      this.influences[i].update(delta);
+    }
 
-    this.ripples.forEach(r => (r.radius += this.config.rippleSpeed));
-    this.ripples = this.ripples.filter(
-      r => r.radius < this.width * 1.5
-    );
+    this.influences =
+      this.influences.filter(i => i.isAlive());
 
-    this.cells.forEach(cell => {
-      let activationStrength = 0;
+    // Apply influences
+    for (let i = 0; i < this.influences.length; i++) {
+      const influence = this.influences[i];
+      const bounds = influence.getBounds();
 
-      if (this.hoverAmount > 0) {
-        const dist = Math.hypot(cell.x - mouse.x, cell.y - mouse.y);
-        activationStrength +=
-          Math.max(0, 1 - dist / 120) * this.hoverAmount;
+      const minCol = Math.max(
+        0,
+        Math.floor(bounds.minX / this.gap)
+      );
+      const maxCol = Math.min(
+        this.columns - 1,
+        Math.floor(bounds.maxX / this.gap)
+      );
 
-        this.ripples.forEach(r => {
-          const dist = Math.hypot(cell.x - r.x, cell.y - r.y);
-          const deltaRipple = Math.abs(dist - r.radius);
+      const minRow = Math.max(
+        0,
+        Math.floor(bounds.minY / this.gap)
+      );
+      const maxRow = Math.min(
+        this.rows - 1,
+        Math.floor(bounds.maxY / this.gap)
+      );
 
-          if (deltaRipple < this.config.rippleThickness) {
-            activationStrength +=
-              (1 - deltaRipple / this.config.rippleThickness) *
-              this.config.rippleStrength *
-              this.hoverAmount;
+      for (let x = minCol; x <= maxCol; x++) {
+        for (let y = minRow; y <= maxRow; y++) {
+          const cell =
+            this.cells[this.getCellIndex(x, y)];
+
+          const value =
+            influence.getInfluence(
+              cell.x,
+              cell.y,
+              cell.maxSize
+            );
+
+          if (value > cell.targetSize) {
+            cell.targetSize = value;
           }
-        });
+        }
       }
+    }
 
-      activationStrength = Math.min(activationStrength, 1);
-
-      if (activationStrength > 0) {
-        cell.minSize = cell.maxSize * 0.6;
-        const breathe = (Math.sin(cell.phase) + 1) / 2;
-
-        cell.targetSize =
-          cell.minSize +
-          breathe * (cell.maxSize - cell.minSize);
-      } else {
-        cell.targetSize = 0;
-      }
-
-      cell.update(
+    // Animate
+    for (let i = 0; i < this.cells.length; i++) {
+      this.cells[i].update(
         this.config.expandEase,
-        this.config.breathSpeed,
         delta
       );
-    });
+    }
   }
+
+  // =========================
+  // RENDER
+  // =========================
 
   render(renderer: Renderer): void {
     const ctx = renderer.getContext();
 
-    this.cells.forEach(cell => {
-      if (cell.size <= 0) return;
+    const batches = new Map<string, PixelCell[]>();
 
-      const offset = (cell.gap - cell.size) * 0.5;
+    for (let i = 0; i < this.cells.length; i++) {
+      const cell = this.cells[i];
 
-      const x = Math.round(cell.x + offset);
-      const y = Math.round(cell.y + offset);
-      const size = Math.round(cell.size);
+      if (cell.size <= 0.5) continue;
 
-      const shimmer = 0.5 + Math.sin(cell.phase) * 0.5;
+      if (!batches.has(cell.color)) {
+        batches.set(cell.color, []);
+      }
 
-      const alpha =
-        1 -
-        this.config.shimmerOpacityStrength +
-        shimmer * this.config.shimmerOpacityStrength;
+      batches.get(cell.color)!.push(cell);
+    }
 
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = cell.color;
-      ctx.fillRect(x, y, size, size);
-      ctx.globalAlpha = 1;
+    batches.forEach((cells, color) => {
+      ctx.fillStyle = color;
+
+      for (let i = 0; i < cells.length; i++) {
+        const cell = cells[i];
+
+        const offset =
+          (cell.gap - cell.size) * 0.5;
+
+        ctx.fillRect(
+          (cell.x + offset) | 0,
+          (cell.y + offset) | 0,
+          cell.size | 0,
+          cell.size | 0
+        );
+      }
     });
   }
 
+  // =========================
+  // EXTERNAL API
+  // =========================
+
   triggerRipple(x: number, y: number): void {
-    this.ripples.push({ x, y, radius: 0 });
+    if (!this.influenceOptions.ripple) return;
+
+    const maxRadius =
+      Math.max(this.width, this.height) * 1.2;
+
+    // limitar cantidad de ripples
+    const rippleCount = this.influences.filter(
+      i => i instanceof RippleInfluence
+    ).length;
+
+    if (rippleCount >= this.maxRipples) {
+      this.influences = this.influences.filter(
+        i => !(i instanceof RippleInfluence)
+      ).slice(1);
+    }
+
+    this.influences.push(
+      new RippleInfluence(
+        x,
+        y,
+        this.config.rippleSpeed,
+        this.config.rippleThickness,
+        this.config.rippleStrength,
+        maxRadius
+      )
+    );
   }
 }

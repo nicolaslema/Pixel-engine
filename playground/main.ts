@@ -19,14 +19,23 @@ const effect = new PixelGridEffect(
   {
     colors: ["#334155", "#475569", "#64748b"],
     gap: 6,
-
     expandEase: 0.08,
-    breathSpeed: 1,
-    shimmerOpacityStrength: 0.4,
+    breathSpeed: 0.2,
 
     rippleSpeed: 3,
-    rippleThickness: 40,
-    rippleStrength: 1,
+    rippleThickness: 5,
+    rippleStrength: 5,
+
+    hoverRadius: 100,
+    organicRadius: 500,
+    organicStrength: 1,
+    organicSpeed: 0.002,
+
+    maxRipples: 30
+  },
+  {
+    ripple:true,
+    hover: true,
   }
 );
 

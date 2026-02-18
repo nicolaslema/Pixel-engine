@@ -1,46 +1,43 @@
 export class PixelCell {
-  x: number;
-  y: number;
-  color: string;
-  gap: number;
-  activation: number;
+  public size = 0;
+  public targetSize = 0;
 
-  size = 0;
-  targetSize = 0;
+  public readonly maxSize: number;
 
-  minSize = 0;
-  maxSize: number;
-
-  phase: number;
-  speed: number;
+  private breathPhase: number;
+  private breathOffset: number;
 
   constructor(
-    x: number,
-    y: number,
-    color: string,
-    gap: number,
-    activation: number
+    public readonly x: number,
+    public readonly y: number,
+    public readonly color: string,
+    public readonly gap: number,
+    maxSizeFactor: number
   ) {
-    this.x = x;
-    this.y = y;
-    this.color = color;
-    this.gap = gap;
-    this.activation = activation;
+    this.maxSize = gap * maxSizeFactor;
 
-    this.maxSize = Math.min(Math.max(1, Math.round(gap * 0.65)), gap);
-    this.phase = Math.random() * Math.PI * 2;
-    this.speed = 0.5 + Math.random() * 0.5;
+    this.breathPhase = Math.random() * Math.PI * 2;
+    this.breathOffset = Math.random() * 0.5 + 0.5;
   }
 
-  update(expandEase: number, breathSpeed: number, delta: number) {
-    this.size += (this.targetSize - this.size) * expandEase;
+  public getBreathFactor(
+    time: number,
+    breathSpeed: number
+  ): number {
+    // breathSpeed controla frecuencia real
+    const t = time * 0.001 * breathSpeed;
 
-    if (Math.abs(this.size - this.targetSize) < 0.05) {
-      this.size = this.targetSize;
-    }
+    return (
+      (Math.sin(t + this.breathPhase) * 0.5 + 0.5) *
+      this.breathOffset
+    );
+  }
 
-    if (this.size > 0.01) {
-      this.phase += breathSpeed * this.speed * delta * 0.01;
-    }
+  public update(
+    expandEase: number,
+    delta: number
+  ): void {
+    this.size +=
+      (this.targetSize - this.size) * expandEase;
   }
 }
