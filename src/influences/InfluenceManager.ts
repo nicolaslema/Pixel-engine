@@ -1,13 +1,33 @@
 import { Influence } from "./Influence";
 
+interface InfluenceManagerOptions {
+  compressionStrength?: number; // k exponencial
+  enableSmoothing?: boolean;
+  smoothingRadius?: number; // 1 = vecinos inmediatos
+}
+
 export class InfluenceManager {
   private influences: Influence[] = [];
+
+  private compressionStrength: number;
+  private enableSmoothing: boolean;
+  private smoothingRadius: number;
 
   constructor(
     private gap: number,
     private columns: number,
-    private rows: number
-  ) {}
+    private rows: number,
+    options: InfluenceManagerOptions = {}
+  ) {
+    this.compressionStrength =
+      options.compressionStrength ?? 2.2;
+
+    this.enableSmoothing =
+      options.enableSmoothing ?? false;
+
+    this.smoothingRadius =
+      options.smoothingRadius ?? 1;
+  }
 
   add(influence: Influence): void {
     this.influences.push(influence);
@@ -30,11 +50,12 @@ export class InfluenceManager {
     cells: any[],
     getCellIndex: (x: number, y: number) => number
   ): void {
-    // ordenar por prioridad
+    // ordenar por prioridad (mayor primero)
     this.influences.sort(
       (a, b) => b.priority - a.priority
     );
 
+    // Aplicar influencias
     for (let i = 0; i < this.influences.length; i++) {
       const influence = this.influences[i];
       const bounds = influence.getBounds();
@@ -95,13 +116,85 @@ export class InfluenceManager {
       }
     }
 
-    // clamp final
+    // Compresión exponencial suave
+    this.compressField(cells);
+
+    // Smoothing opcional
+    if (this.enableSmoothing) {
+      this.smoothField(cells, getCellIndex);
+    }
+  }
+
+  // ----------------------------------------
+  // COMPRESIÓN EXPONENCIAL
+  // ----------------------------------------
+
+  private compressField(cells: any[]): void {
+    const k = this.compressionStrength;
+
     for (let i = 0; i < cells.length; i++) {
       const cell = cells[i];
 
-      if (cell.targetSize > cell.maxSize) {
-        cell.targetSize = cell.maxSize;
+      const max = cell.maxSize;
+      const value = cell.targetSize;
+
+      // f(x) = max * (1 - e^(-k x / max))
+      cell.targetSize =
+        max * (1 - Math.exp(-k * value / max));
+    }
+  }
+
+  // ----------------------------------------
+  // FIELD SMOOTHING (BOX BLUR LOCAL)
+  // ----------------------------------------
+
+  private smoothField(
+    cells: any[],
+    getCellIndex: (x: number, y: number) => number
+  ): void {
+    const temp = new Float32Array(cells.length);
+
+    for (let x = 0; x < this.columns; x++) {
+      for (let y = 0; y < this.rows; y++) {
+        const index = getCellIndex(x, y);
+
+        let sum = 0;
+        let count = 0;
+
+        for (
+          let dx = -this.smoothingRadius;
+          dx <= this.smoothingRadius;
+          dx++
+        ) {
+          for (
+            let dy = -this.smoothingRadius;
+            dy <= this.smoothingRadius;
+            dy++
+          ) {
+            const nx = x + dx;
+            const ny = y + dy;
+
+            if (
+              nx >= 0 &&
+              nx < this.columns &&
+              ny >= 0 &&
+              ny < this.rows
+            ) {
+              const neighborIndex =
+                getCellIndex(nx, ny);
+
+              sum += cells[neighborIndex].targetSize;
+              count++;
+            }
+          }
+        }
+
+        temp[index] = sum / count;
       }
+    }
+
+    for (let i = 0; i < cells.length; i++) {
+      cells[i].targetSize = temp[i];
     }
   }
 }

@@ -1,21 +1,23 @@
-import { Influence } from "./Influence";
+import { Influence, BlendMode } from "./Influence";
+import { clamp } from "../utils/math";
 
 export class RippleInfluence implements Influence {
-  private radius = 0;
   priority = 10;
-  blendMode: "max" = "max";
+  blendMode: BlendMode = "max";
+
+  private radius = 0;
 
   constructor(
-    private x: number,
-    private y: number,
+    private originX: number,
+    private originY: number,
     private speed: number,
     private thickness: number,
     private strength: number,
     private maxRadius: number
   ) {}
 
-  update(): void {
-    this.radius += this.speed;
+  update(delta: number): void {
+    this.radius += this.speed * delta;
   }
 
   isAlive(): boolean {
@@ -23,38 +25,34 @@ export class RippleInfluence implements Influence {
   }
 
   getBounds() {
-    const bound = this.radius + this.thickness;
-
     return {
-      minX: this.x - bound,
-      maxX: this.x + bound,
-      minY: this.y - bound,
-      maxY: this.y + bound
+      minX: this.originX - this.radius - this.thickness,
+      maxX: this.originX + this.radius + this.thickness,
+      minY: this.originY - this.radius - this.thickness,
+      maxY: this.originY + this.radius + this.thickness
     };
   }
 
   getInfluence(
-    cellX: number,
-    cellY: number,
-    cellMaxSize: number
+    x: number,
+    y: number,
+    maxSize: number
   ): number {
-    const dx = cellX - this.x;
-    const dy = cellY - this.y;
+    const dx = x - this.originX;
+    const dy = y - this.originY;
 
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const distance = Math.sqrt(dx * dx + dy * dy);
 
-    const minDist = this.radius - this.thickness;
-    const maxDist = this.radius + this.thickness;
+    const diff = Math.abs(distance - this.radius);
 
-    if (dist < minDist || dist > maxDist) {
-      return 0;
-    }
+    if (diff > this.thickness) return 0;
 
-    const influence =
-      1 -
-      Math.abs(dist - this.radius) /
-        this.thickness;
+    // Perfil de campana suave
+    const normalized = 1 - diff / this.thickness;
 
-    return cellMaxSize * influence * this.strength;
+    // curva cuadrática suave
+    const falloff = normalized * normalized;
+
+    return falloff * maxSize * this.strength;
   }
 }

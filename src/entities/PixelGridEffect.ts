@@ -7,6 +7,9 @@ import { InfluenceManager } from "../influences/InfluenceManager";
 import { RippleInfluence } from "../influences/RippleInfluence";
 import { HoverInfluence } from "../influences/HoverInfluence";
 import { OrganicNoiseInfluence } from "../influences/OrganicNoiseInfluence";
+import { TextMaskInfluence } from "../influences/Masks/TextMaskInfluence";
+import { ImageMaskInfluence } from "../influences/Masks/ImageMaskInfluence";
+import { MorphMaskInfluence } from "../influences/Masks/MorphMaskInfluence";
 
 export interface PixelGridConfig {
   colors: string[];
@@ -41,6 +44,7 @@ export class PixelGridEffect extends Entity {
   private influenceManager: InfluenceManager;
   private maxRipples: number;
 
+
   constructor(
     private engine: PixelEngine,
     private width: number,
@@ -52,7 +56,10 @@ export class PixelGridEffect extends Entity {
       organic: false
     }
   ) {
+    const cx = width / 2;
+    const cy = height / 2;
     super();
+    
 
     this.columns = Math.ceil(width / config.gap);
     this.rows = Math.ceil(height / config.gap);
@@ -60,37 +67,92 @@ export class PixelGridEffect extends Entity {
 
     this.createGrid();
 
-    this.influenceManager = new InfluenceManager(
-      config.gap,
-      this.columns,
-      this.rows
-    );
+this.influenceManager = new InfluenceManager(
+  config.gap,
+  this.columns,
+  this.rows,
+  {
+    compressionStrength: 2.5,
+    enableSmoothing: true,
+    smoothingRadius: 1
+  }
+);
+
+// this.influenceManager.add(
+//   new ImageMaskInfluence(
+//     "/src/assets/cat.png",
+//     this.width / 2,
+//     this.height / 2,
+//     {
+//       scale: 3,
+//       strength: 1.9,
+//       sampleMode: "threshold"
+//     }
+//   )
+// );
+
+
+const imageMask = new ImageMaskInfluence(
+  "/src/assets/alberto_fernandez.jpg.webp",
+  cx,
+  cy,
+  { scale: 1,
+    sampleMode: "threshold",
+    strength: 1.9,
+   }
+);
+
+const textMask = new TextMaskInfluence(
+  "Herza",
+  this.width / 2,
+  this.height / 2,
+  {
+    font: "bold 160px Arial",
+    strength: 0.9,
+    blurRadius: 2
+  }
+);
+
+const morph = new MorphMaskInfluence(
+  imageMask,
+  textMask,
+  {
+    initialT: 1,
+  }
+);
+
+morph.morphTo(1, 0.5);
+    this.influenceManager.add(morph);
+  
+
+// this.influenceManager.add(textMask);
 
     this.setupInfluences();
   }
+  
 
   private createGrid(): void {
     const { colors, gap } = this.config;
-
+    
     for (let x = 0; x < this.columns; x++) {
       for (let y = 0; y < this.rows; y++) {
         const px = x * gap;
         const py = y * gap;
-
+        
         const color =
-          colors[Math.floor(Math.random() * colors.length)];
-
+        colors[Math.floor(Math.random() * colors.length)];
+        
         this.cells.push(
           new PixelCell(px, py, color, gap, 1)
         );
       }
     }
   }
-
+  
   private getCellIndex(x: number, y: number): number {
     return x * this.rows + y;
   }
-
+  
   private setupInfluences(): void {
     if (this.influenceOptions.hover) {
       this.influenceManager.add(
@@ -102,7 +164,7 @@ export class PixelGridEffect extends Entity {
         )
       );
     }
-
+    
     if (this.influenceOptions.organic) {
       this.influenceManager.add(
         new OrganicNoiseInfluence(
