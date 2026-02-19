@@ -1,14 +1,15 @@
 export type BlendMode =
   | "max"
   | "add"
-  | "override"
-  | "multiply";
+  | "multiply"
+  | "override";
 
 export interface Influence {
   priority: number;
   blendMode: BlendMode;
 
-  update(delta: number): void;
+  update(delta: number): void;   // ← IMPORTANTE
+  isAlive(): boolean;
 
   getBounds(): {
     minX: number;
@@ -18,10 +19,8 @@ export interface Influence {
   };
 
   getInfluence(
-    cellX: number,
-    cellY: number,
-    cellMaxSize: number
+    x: number,
+    y: number,
+    maxSize: number
   ): number;
-
-  isAlive(): boolean;
 }

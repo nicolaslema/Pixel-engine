@@ -16,6 +16,10 @@ interface ImageMaskOptions {
 }
 
 export class ImageMaskInfluence extends MaskInfluence {
+  protected onUpdate(delta: number): void {
+    throw new Error("Method not implemented.");
+  }
+
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private image: HTMLImageElement;
@@ -54,13 +58,17 @@ export class ImageMaskInfluence extends MaskInfluence {
     };
   }
 
-  update(): void {}
+  update(_: number): void {
+    // máscara estática
+  }
 
   isAlive(): boolean {
     return this.loaded;
   }
 
   generateMask(): void {
+    if (!this.image.width || !this.image.height) return;
+
     this.width = Math.floor(this.image.width * this.scale);
     this.height = Math.floor(this.image.height * this.scale);
 
@@ -102,29 +110,16 @@ export class ImageMaskInfluence extends MaskInfluence {
           break;
 
         case "luminance":
-          value =
-            (0.299 * r +
-              0.587 * g +
-              0.114 * b) /
-            255;
+          value = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
           break;
 
         case "threshold":
-          const lum =
-            (0.299 * r +
-              0.587 * g +
-              0.114 * b) /
-            255;
+          const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
           value = lum > this.threshold ? 1 : 0;
           break;
 
         case "invert":
-          value =
-            1 -
-            (0.299 * r +
-              0.587 * g +
-              0.114 * b) /
-              255;
+          value = 1 - (0.299 * r + 0.587 * g + 0.114 * b) / 255;
           break;
       }
 
@@ -143,41 +138,29 @@ export class ImageMaskInfluence extends MaskInfluence {
   private applyBlur() {
     const temp = new Float32Array(this.buffer.length);
 
-    for (let x = 0; x < this.width; x++) {
-      for (let y = 0; y < this.height; y++) {
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+
         let sum = 0;
         let count = 0;
 
-        for (
-          let dx = -this.blurRadius;
-          dx <= this.blurRadius;
-          dx++
-        ) {
-          for (
-            let dy = -this.blurRadius;
-            dy <= this.blurRadius;
-            dy++
-          ) {
+        for (let dy = -this.blurRadius; dy <= this.blurRadius; dy++) {
+          for (let dx = -this.blurRadius; dx <= this.blurRadius; dx++) {
+
             const nx = x + dx;
             const ny = y + dy;
 
             if (
-              nx >= 0 &&
-              nx < this.width &&
-              ny >= 0 &&
-              ny < this.height
+              nx >= 0 && nx < this.width &&
+              ny >= 0 && ny < this.height
             ) {
-              sum +=
-                this.buffer[
-                  ny * this.width + nx
-                ];
+              sum += this.buffer[ny * this.width + nx];
               count++;
             }
           }
         }
 
-        temp[y * this.width + x] =
-          sum / count;
+        temp[y * this.width + x] = sum / count;
       }
     }
 

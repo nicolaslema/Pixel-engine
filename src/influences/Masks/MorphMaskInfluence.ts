@@ -1,103 +1,98 @@
-import { Influence, BlendMode } from "../Influence";
 import { MaskInfluence } from "./MaskInfluence";
 
-interface MorphOptions {
-  strength?: number;
-  initialT?: number;
-}
+export class MorphMaskInfluence extends MaskInfluence {
+  protected onUpdate(delta: number): void {
+    throw new Error("Method not implemented.");
+  }
 
-export class MorphMaskInfluence implements Influence {
-  priority = 8;
-  blendMode: BlendMode = "max";
+  private maskA: MaskInfluence;
+  private maskB: MaskInfluence;
 
-  private t: number;
-  private startT: number;
-  private targetT: number;
-
-  private duration = 1;
-  private elapsed = 0;
-  private animating = false;
-
-  private strength: number;
+  private duration: number;
+  private time = 0;
+  private t = 0;
+  private finished = false;
 
   constructor(
-    private maskA: MaskInfluence,
-    private maskB: MaskInfluence,
-    options: MorphOptions = {}
+    maskA: MaskInfluence,
+    maskB: MaskInfluence,
+    duration: number = 1
   ) {
-    this.t = options.initialT ?? 0;
-    this.startT = this.t;
-    this.targetT = this.t;
-    this.strength = options.strength ?? 1;
-  }
+    super(maskA["centerX"], maskA["centerY"], 1);
 
-  // 🔥 Animación controlada por duración
-  morphTo(target: number, duration: number = 1) {
-    this.startT = this.t;
-    this.targetT = Math.max(0, Math.min(1, target));
-    this.duration = Math.max(0.0001, duration);
-    this.elapsed = 0;
-    this.animating = true;
-  }
+    this.maskA = maskA;
+    this.maskB = maskB;
+    this.duration = duration;
 
-  // 🔥 Cambio inmediato
-  setImmediate(t: number) {
-    const clamped = Math.max(0, Math.min(1, t));
-    this.t = clamped;
-    this.startT = clamped;
-    this.targetT = clamped;
-    this.animating = false;
+    this.width = Math.max(
+      maskA.getWidth(),
+      maskB.getWidth()
+    );
+
+    this.height = Math.max(
+      maskA.getHeight(),
+      maskB.getHeight()
+    );
+
+    this.buffer = new Float32Array(this.width * this.height);
   }
 
   update(delta: number): void {
-    this.maskA.update(delta);
-    this.maskB.update(delta);
 
-    if (!this.animating) return;
+    if (this.finished) return;
 
-    this.elapsed += delta;
+    this.time += delta;
+    this.t = Math.min(1, this.time / this.duration);
 
-    const progress = Math.min(this.elapsed / this.duration, 1);
+    const bufferA = this.maskA.getBuffer();
+    const bufferB = this.maskB.getBuffer();
 
-    // Smoothstep easing
-    const eased = progress * progress * (3 - 2 * progress);
+    const wA = this.maskA.getWidth();
+    const hA = this.maskA.getHeight();
+    const wB = this.maskB.getWidth();
+    const hB = this.maskB.getHeight();
 
-    this.t =
-      this.startT +
-      (this.targetT - this.startT) * eased;
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
 
-    if (progress >= 1) {
-      this.animating = false;
+        const a = this.sampleBuffer(bufferA, wA, hA, x, y);
+        const b = this.sampleBuffer(bufferB, wB, hB, x, y);
+
+        const index = y * this.width + x;
+
+        this.buffer[index] =
+          a * (1 - this.t) + b * this.t;
+      }
+    }
+
+    if (this.t >= 1) {
+      this.finished = true;
     }
   }
 
+  generateMask(): void {}
+
   isAlive(): boolean {
-    return this.maskA.isAlive() || this.maskB.isAlive();
+    return !this.finished;
   }
 
-  getBounds() {
-    const a = this.maskA.getBounds();
-    const b = this.maskB.getBounds();
-
-    return {
-      minX: Math.min(a.minX, b.minX),
-      maxX: Math.max(a.maxX, b.maxX),
-      minY: Math.min(a.minY, b.minY),
-      maxY: Math.max(a.maxY, b.maxY)
-    };
-  }
-
-  getInfluence(
+  private sampleBuffer(
+    buffer: Float32Array,
+    w: number,
+    h: number,
     x: number,
-    y: number,
-    maxSize: number
+    y: number
   ): number {
-    const a = this.maskA.getInfluence(x, y, maxSize);
-    const b = this.maskB.getInfluence(x, y, maxSize);
 
-    return (
-      (a * (1 - this.t) + b * this.t) *
-      this.strength
-    );
+    if (!buffer) return 0;
+
+    const sx = Math.floor(x * (w / this.width));
+    const sy = Math.floor(y * (h / this.height));
+
+    if (sx < 0 || sy < 0 || sx >= w || sy >= h) {
+      return 0;
+    }
+
+    return buffer[sy * w + sx];
   }
 }

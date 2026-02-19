@@ -11,6 +11,7 @@ import { TextMaskInfluence } from "../influences/Masks/TextMaskInfluence";
 import { ImageMaskInfluence } from "../influences/Masks/ImageMaskInfluence";
 import { MorphMaskInfluence } from "../influences/Masks/MorphMaskInfluence";
 
+
 export interface PixelGridConfig {
   colors: string[];
   gap: number;
@@ -37,6 +38,7 @@ export interface PixelGridInfluenceOptions {
 }
 
 export class PixelGridEffect extends Entity {
+
   private cells: PixelCell[] = [];
   private columns: number;
   private rows: number;
@@ -44,6 +46,16 @@ export class PixelGridEffect extends Entity {
   private influenceManager: InfluenceManager;
   private maxRipples: number;
 
+  private imageMask!: ImageMaskInfluence;
+  private textMask!: TextMaskInfluence;
+  private morphMask: MorphMaskInfluence | null = null;
+  private currentState: 
+  | "idleImage"
+  | "morphToText"
+  | "idleText"
+  | "morphToImage" = "idleImage";
+
+private loopEnabled = true;
 
   constructor(
     private engine: PixelEngine,
@@ -56,10 +68,10 @@ export class PixelGridEffect extends Entity {
       organic: false
     }
   ) {
+    super();
+
     const cx = width / 2;
     const cy = height / 2;
-    super();
-    
 
     this.columns = Math.ceil(width / config.gap);
     this.rows = Math.ceil(height / config.gap);
@@ -67,93 +79,103 @@ export class PixelGridEffect extends Entity {
 
     this.createGrid();
 
-this.influenceManager = new InfluenceManager(
-  config.gap,
-  this.columns,
-  this.rows,
-  {
-    compressionStrength: 2.5,
-    enableSmoothing: true,
-    smoothingRadius: 1
+    this.influenceManager = new InfluenceManager(
+      config.gap,
+      this.columns,
+      this.rows,
+      {
+        compressionStrength: 2.5,
+        enableSmoothing: true,
+        smoothingRadius: 1
+      }
+    );
+
+    // --- Crear máscaras ---
+    this.imageMask = new ImageMaskInfluence(
+      "/src/assets/cat.png",
+      cx,
+      cy,
+      {
+        scale: 2,
+        sampleMode: "invert",
+        strength: 1.5,
+      }
+    );
+
+    this.textMask = new TextMaskInfluence(
+      "uwu",
+      cx - 100,
+      cy + 280,
+      {
+        font: "bold 160px Arial",
+        strength: 0.9,
+        blurRadius: 2
+      }
+    );
+
+    // Estado inicial: solo imagen
+    this.influenceManager.add(this.imageMask);
+    this.influenceManager.add(this.textMask);
+
+    // // Lanzar morph después de 2 segundos
+    // setTimeout(() => {
+    //   this.startMorph();
+    // }, 2000);
+
+    // this.setupInfluences();
   }
-);
 
-// this.influenceManager.add(
-//   new ImageMaskInfluence(
-//     "/src/assets/cat.png",
-//     this.width / 2,
-//     this.height / 2,
-//     {
-//       scale: 3,
-//       strength: 1.9,
-//       sampleMode: "threshold"
-//     }
-//   )
-// );
-
-
-const imageMask = new ImageMaskInfluence(
-  "/src/assets/alberto_fernandez.jpg.webp",
-  cx,
-  cy,
-  { scale: 1,
-    sampleMode: "threshold",
-    strength: 1.9,
-   }
-);
-
-const textMask = new TextMaskInfluence(
-  "Herza",
-  this.width / 2,
-  this.height / 2,
-  {
-    font: "bold 160px Arial",
-    strength: 0.9,
-    blurRadius: 2
-  }
-);
-
-const morph = new MorphMaskInfluence(
-  imageMask,
-  textMask,
-  {
-    initialT: 1,
-  }
-);
-
-morph.morphTo(1, 0.5);
-    this.influenceManager.add(morph);
-  
-
-// this.influenceManager.add(textMask);
-
-    this.setupInfluences();
-  }
-  
+  // =====================================================
+  // GRID
+  // =====================================================
 
   private createGrid(): void {
     const { colors, gap } = this.config;
-    
+
     for (let x = 0; x < this.columns; x++) {
       for (let y = 0; y < this.rows; y++) {
+
         const px = x * gap;
         const py = y * gap;
-        
+
         const color =
-        colors[Math.floor(Math.random() * colors.length)];
-        
+          colors[Math.floor(Math.random() * colors.length)];
+
         this.cells.push(
           new PixelCell(px, py, color, gap, 1)
         );
       }
     }
   }
-  
+
   private getCellIndex(x: number, y: number): number {
     return x * this.rows + y;
   }
-  
+
+  // =====================================================
+  // MORPH
+  // =====================================================
+
+  private startMorph(): void {
+
+    // Quitar imagen
+    this.influenceManager.remove(this.imageMask);
+
+    this.morphMask = new MorphMaskInfluence(
+      this.imageMask,
+      this.textMask,
+      2
+    );
+
+    this.influenceManager.add(this.morphMask);
+  }
+
+  // =====================================================
+  // INFLUENCES SETUP
+  // =====================================================
+
   private setupInfluences(): void {
+
     if (this.influenceOptions.hover) {
       this.influenceManager.add(
         new HoverInfluence(
@@ -164,7 +186,7 @@ morph.morphTo(1, 0.5);
         )
       );
     }
-    
+
     if (this.influenceOptions.organic) {
       this.influenceManager.add(
         new OrganicNoiseInfluence(
@@ -178,7 +200,12 @@ morph.morphTo(1, 0.5);
     }
   }
 
+  // =====================================================
+  // UPDATE
+  // =====================================================
+
   update(delta: number): void {
+
     // Reset targets
     for (let i = 0; i < this.cells.length; i++) {
       this.cells[i].targetSize = 0;
@@ -186,6 +213,15 @@ morph.morphTo(1, 0.5);
 
     // Update influences
     this.influenceManager.update(delta);
+
+    // Si terminó el morph → dejar solo texto
+    if (this.morphMask && !this.morphMask.isAlive()) {
+
+      this.influenceManager.remove(this.morphMask);
+      this.influenceManager.add(this.textMask);
+
+      this.morphMask = null;
+    }
 
     // Apply influences
     this.influenceManager.apply(
@@ -202,14 +238,18 @@ morph.morphTo(1, 0.5);
     }
   }
 
-  render(renderer: Renderer): void {
-    const ctx = renderer.getContext();
+  // =====================================================
+  // RENDER
+  // =====================================================
 
+  render(renderer: Renderer): void {
+
+    const ctx = renderer.getContext();
     const batches = new Map<string, PixelCell[]>();
 
     for (let i = 0; i < this.cells.length; i++) {
-      const cell = this.cells[i];
 
+      const cell = this.cells[i];
       if (cell.size <= 0.5) continue;
 
       if (!batches.has(cell.color)) {
@@ -220,11 +260,12 @@ morph.morphTo(1, 0.5);
     }
 
     batches.forEach((cells, color) => {
+
       ctx.fillStyle = color;
 
       for (let i = 0; i < cells.length; i++) {
-        const cell = cells[i];
 
+        const cell = cells[i];
         const offset =
           (cell.gap - cell.size) * 0.5;
 
@@ -238,7 +279,12 @@ morph.morphTo(1, 0.5);
     });
   }
 
+  // =====================================================
+  // RIPPLE
+  // =====================================================
+
   triggerRipple(x: number, y: number): void {
+
     if (!this.influenceOptions.ripple) return;
 
     const maxRadius =

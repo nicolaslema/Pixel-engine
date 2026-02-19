@@ -7,7 +7,6 @@ export abstract class MaskInfluence implements Influence {
   protected width = 0;
   protected height = 0;
 
-  // 🔥 Buffer normalizado 0–1
   protected buffer!: Float32Array;
 
   constructor(
@@ -16,8 +15,14 @@ export abstract class MaskInfluence implements Influence {
     protected strength: number = 1
   ) {}
 
-  abstract update(delta: number): void;
-  abstract generateMask(): void;
+  // 🔥 UPDATE FINAL (no abstract)
+  update(delta: number): void {
+    this.onUpdate(delta);
+    this.generateMask(); // siempre regeneramos
+  }
+
+  protected abstract onUpdate(delta: number): void;
+  protected abstract generateMask(): void;
 
   isAlive(): boolean {
     return true;
@@ -30,6 +35,18 @@ export abstract class MaskInfluence implements Influence {
       minY: this.centerY - this.height * 0.5,
       maxY: this.centerY + this.height * 0.5
     };
+  }
+
+  getBuffer(): Float32Array {
+    return this.buffer;
+  }
+
+  getWidth(): number {
+    return this.width;
+  }
+
+  getHeight(): number {
+    return this.height;
   }
 
   getInfluence(
