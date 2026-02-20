@@ -25,6 +25,7 @@ export class ImageMaskInfluence extends MaskInfluence {
   private image: HTMLImageElement;
 
   private loaded = false;
+  private failed = false;
 
   private scale: number;
   private sampleMode: SampleMode;
@@ -56,6 +57,11 @@ export class ImageMaskInfluence extends MaskInfluence {
       this.generateMask();
       this.loaded = true;
     };
+
+    this.image.onerror = () => {
+      this.failed = true;
+      this.loaded = false;
+    };
   }
 
   update(_: number): void {
@@ -63,14 +69,17 @@ export class ImageMaskInfluence extends MaskInfluence {
   }
 
   isAlive(): boolean {
-    return this.loaded;
+    // Keep alive while loading so async images are not removed by manager.
+    return !this.failed;
   }
 
   generateMask(): void {
     if (!this.image.width || !this.image.height) return;
 
-    this.width = Math.floor(this.image.width * this.scale);
-    this.height = Math.floor(this.image.height * this.scale);
+    this.width = Math.max(1, Math.floor(this.image.width * this.scale));
+    this.height = Math.max(1, Math.floor(this.image.height * this.scale));
+
+    if (this.width <= 0 || this.height <= 0) return;
 
     this.canvas.width = this.width;
     this.canvas.height = this.height;

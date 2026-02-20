@@ -47,6 +47,7 @@ engine.start();
 ```tsx
 import { useEffect, useRef } from "react";
 import { PixelEngine, PixelGridEffect } from "pixel-engine";
+import catPngUrl from "./assets/cat.png";
 
 export function PixelBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -64,7 +65,14 @@ export function PixelBackground() {
       expandEase: 0.08,
       breathSpeed: 1,
       hoverEffects: { mode: "reactive", radius: 110, shape: "circle" },
-      rippleEffects: { speed: 0.5, thickness: 50, strength: 30, maxRipples: 25 }
+      rippleEffects: { speed: 0.5, thickness: 50, strength: 30, maxRipples: 25 },
+      imageMask: {
+        src: catPngUrl,
+        centerX: width * 0.5,
+        centerY: height * 0.5,
+        scale: 2,
+        sampleMode: "threshold"
+      }
     });
 
     engine.addEntity(grid);
@@ -85,6 +93,8 @@ export function PixelBackground() {
   return <canvas ref={canvasRef} />;
 }
 ```
+
+Use bundled asset URLs (`import img from "./asset.png"`). Do not use `"/src/..."` paths in app projects.
 
 ## Architecture
 

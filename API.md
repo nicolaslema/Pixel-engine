@@ -230,6 +230,7 @@ canvas.addEventListener("click", (e) => {
 ```tsx
 import { useEffect, useRef } from "react";
 import { PixelEngine, PixelGridEffect } from "pixel-engine";
+import catPngUrl from "./assets/cat.png";
 
 export function PixelGridCanvas() {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -247,7 +248,14 @@ export function PixelGridCanvas() {
       expandEase: 0.08,
       breathSpeed: 1,
       hoverEffects: { mode: "reactive", radius: 110, shape: "vignette" },
-      rippleEffects: { speed: 0.5, thickness: 50, strength: 30, maxRipples: 25 }
+      rippleEffects: { speed: 0.5, thickness: 50, strength: 30, maxRipples: 25 },
+      imageMask: {
+        src: catPngUrl,
+        centerX: width * 0.5,
+        centerY: height * 0.5,
+        scale: 2,
+        sampleMode: "threshold"
+      }
     });
 
     engine.addEntity(grid);
@@ -259,6 +267,8 @@ export function PixelGridCanvas() {
   return <canvas ref={ref} />;
 }
 ```
+
+Note: in React/Vite/Next projects, prefer `import imageUrl from "./file.png"` and pass that URL. Avoid `"/src/..."`
 
 ## Vue Wrapper Pattern
 
