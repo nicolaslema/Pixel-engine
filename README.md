@@ -16,6 +16,14 @@ Stable API baseline (v1) for core + `PixelGridEffect`.
 
 ## Install
 
+Recommended split packages:
+
+```bash
+npm install @pixel-engine/core @pixel-engine/effects
+```
+
+Compatibility aggregate package:
+
 ```bash
 npm install pixel-engine
 ```
@@ -23,7 +31,8 @@ npm install pixel-engine
 ## Quick Usage
 
 ```ts
-import { PixelEngine, PixelGridEffect } from "pixel-engine";
+import { PixelEngine } from "@pixel-engine/core";
+import { PixelGridEffect } from "@pixel-engine/effects";
 
 const canvas = document.getElementById("app") as HTMLCanvasElement;
 
@@ -111,5 +120,20 @@ Use bundled asset URLs (`import img from "./asset.png"`). Do not use `"/src/..."
 - `npm run dev`: runs playground with Vite.
 - `npm run test`: runs Vitest.
 - `npm run build`: builds distributable library with `tsup` (ESM/CJS/types).
+- `npm run build:packages`: builds `@pixel-engine/core` and `@pixel-engine/effects`.
+- `npm run build:all`: builds aggregate + split packages.
 - `npm run build:playground`: builds playground app with Vite.
 - API reference and examples: `API.md`
+- Release notes: `CHANGELOG.md`
+- Migration guide: `MIGRATION.md`
+
+## Package Split
+
+- `@pixel-engine/core`: runtime primitives (engine, loop, scene, renderers, input, base grid helpers).
+- `@pixel-engine/effects`: high-level effects (`PixelGridEffect`), influences, masks.
+
+Benefits:
+- smaller dependency surface per use-case
+- cleaner boundaries and maintainability
+- easier wrappers for React/Vue/Svelte
+- clearer long-term API ownership

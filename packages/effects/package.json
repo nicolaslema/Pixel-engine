@@ -1,0 +1,26 @@
+{
+  "name": "@pixel-engine/effects",
+  "version": "1.0.0",
+  "description": "Effects package for Pixel Engine (PixelGrid and influences).",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@pixel-engine/core": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsup"
+  }
+}

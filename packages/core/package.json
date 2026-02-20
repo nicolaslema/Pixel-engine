@@ -1,0 +1,23 @@
+{
+  "name": "@pixel-engine/core",
+  "version": "1.0.0",
+  "description": "Core runtime package for Pixel Engine.",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup"
+  }
+}

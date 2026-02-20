@@ -1,9 +1,13 @@
 {
   "name": "pixel-engine",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A high-performance typed-array based pixel simulation engine.",
   "author": "TuNombre",
   "license": "MIT",
+  "private": false,
+  "workspaces": [
+    "packages/*"
+  ],
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -21,6 +25,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsup",
+    "build:packages": "npm run build -w @pixel-engine/core && npm run build -w @pixel-engine/effects",
+    "build:all": "npm run build && npm run build:packages",
     "build:playground": "vite build",
     "preview": "vite preview",
     "test": "vitest"

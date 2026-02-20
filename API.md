@@ -16,7 +16,8 @@ Legacy top-level fields were removed (e.g. `hoverMode`, `rippleSpeed`).
 ## Quick Start
 
 ```ts
-import { PixelEngine, PixelGridEffect } from "pixel-engine";
+import { PixelEngine } from "@pixel-engine/core";
+import { PixelGridEffect } from "@pixel-engine/effects";
 
 const canvas = document.getElementById("app") as HTMLCanvasElement;
 
@@ -231,7 +232,8 @@ canvas.addEventListener("click", (e) => {
 
 ```tsx
 import { useEffect, useRef } from "react";
-import { PixelEngine, PixelGridEffect } from "pixel-engine";
+import { PixelEngine } from "@pixel-engine/core";
+import { PixelGridEffect } from "@pixel-engine/effects";
 import catPngUrl from "./assets/cat.png";
 
 export function PixelGridCanvas() {
@@ -276,7 +278,8 @@ Note: in React/Vite/Next projects, prefer `import imageUrl from "./file.png"` an
 
 ```ts
 import { onMounted, onBeforeUnmount, ref } from "vue";
-import { PixelEngine, PixelGridEffect } from "pixel-engine";
+import { PixelEngine } from "@pixel-engine/core";
+import { PixelGridEffect } from "@pixel-engine/effects";
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 let engine: PixelEngine | null = null;
