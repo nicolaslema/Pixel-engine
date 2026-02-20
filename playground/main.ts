@@ -23,7 +23,7 @@ const effect = new PixelGridEffect(
     breathSpeed: 0.9,
 
     hoverEffects: {
-      mode: "classic",
+      mode: "reactive",
       radius: 100,
       radiusY: 100,
       shape: "circle",

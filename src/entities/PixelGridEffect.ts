@@ -83,23 +83,11 @@ export interface PixelGridConfig {
   expandEase: number;
   breathSpeed: number;
 
-  rippleSpeed?: number;
-  rippleThickness?: number;
-  rippleStrength?: number;
-
-  hoverRadius?: number;
-  hoverRadiusY?: number;
-  hoverShape?: HoverShape;
-  hoverMode?: HoverMode;
-
   organicRadius?: number;
   organicStrength?: number;
   organicSpeed?: number;
 
-  maxRipples?: number;
-  reactiveHover?: HoverEffectsOptions;
   hoverEffects?: HoverEffectsOptions;
-  reactiveRipple?: RippleEffectsOptions;
   rippleEffects?: RippleEffectsOptions;
   breathing?: BreathingOptions;
   autoMorph?: AutoMorphOptions;
@@ -158,14 +146,14 @@ export class PixelGridEffect extends Entity {
 
     this.columns = Math.ceil(width / config.gap);
     this.rows = Math.ceil(height / config.gap);
-    const hoverEffects = config.hoverEffects ?? config.reactiveHover;
-    const rippleEffects = config.rippleEffects ?? config.reactiveRipple;
+    const hoverEffects = config.hoverEffects;
+    const rippleEffects = config.rippleEffects;
 
     this.hoverEffects = {
-      mode: hoverEffects?.mode ?? config.hoverMode ?? "classic",
-      radius: hoverEffects?.radius ?? config.hoverRadius ?? 120,
-      radiusY: hoverEffects?.radiusY ?? config.hoverRadiusY ?? hoverEffects?.radius ?? config.hoverRadius ?? 120,
-      shape: hoverEffects?.shape ?? config.hoverShape ?? "circle",
+      mode: hoverEffects?.mode ?? "classic",
+      radius: hoverEffects?.radius ?? 120,
+      radiusY: hoverEffects?.radiusY ?? hoverEffects?.radius ?? 120,
+      shape: hoverEffects?.shape ?? "circle",
       strength: hoverEffects?.strength ?? 1,
       interactionScope: hoverEffects?.interactionScope ?? "imageMask",
       deactivate: hoverEffects?.deactivate ?? 0.8,
@@ -174,10 +162,10 @@ export class PixelGridEffect extends Entity {
       tintPalette: hoverEffects?.tintPalette ?? []
     };
 
-    this.rippleSpeed = rippleEffects?.speed ?? config.rippleSpeed ?? 0.5;
-    this.rippleThickness = rippleEffects?.thickness ?? config.rippleThickness ?? 50;
-    this.rippleStrength = rippleEffects?.strength ?? config.rippleStrength ?? 30;
-    this.maxRipples = rippleEffects?.maxRipples ?? config.maxRipples ?? 20;
+    this.rippleSpeed = rippleEffects?.speed ?? 0.5;
+    this.rippleThickness = rippleEffects?.thickness ?? 50;
+    this.rippleStrength = rippleEffects?.strength ?? 30;
+    this.maxRipples = rippleEffects?.maxRipples ?? 20;
 
     this.rippleEffects = {
       speed: this.rippleSpeed,
