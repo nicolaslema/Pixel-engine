@@ -126,6 +126,7 @@ Use bundled asset URLs (`import img from "./asset.png"`). Do not use `"/src/..."
 - API reference and examples: `API.md`
 - Release notes: `CHANGELOG.md`
 - Migration guide: `MIGRATION.md`
+- Full technical audit + prioritized TODOs: `PROJECT_SUMMARY_TODOS.md`
 
 ## Package Split
 
