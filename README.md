@@ -35,3 +35,22 @@ Early development – v0.1.0
 - Stable core API for integration in React/Vue wrappers.
 - Renderer-agnostic architecture to support future WebGL backend.
 - Clear separation between engine runtime and visual effect modules.
+
+## PixelGrid Reactive Hover
+
+`PixelGridEffect` supports two hover modes:
+
+- `classic`: additive radial influence.
+- `reactive`: post-process interaction that can:
+  - deactivate pixels (`reactiveHover.deactivate`)
+  - displace pixels (`reactiveHover.displace`, `reactiveHover.jitter`)
+  - recolor pixels (`reactiveHover.tintPalette`)
+  - limit scope (`reactiveHover.interactionScope`: `"all" | "activeOnly" | "imageMask"`)
+  - change hover shape (`reactiveHover.shape`: `"circle" | "vignette"`)
+
+Additional controls:
+
+- `hoverShape` / `hoverRadiusY`: shape + vertical radius for classic hover.
+- `reactiveRipple`: make ripple pass apply reactive color/displacement/jitter/deactivation.
+- `autoMorph.intervalMs`: extra wait between morph cycles.
+- `imageMask` / `textMask`: set source text/image and their `centerX`/`centerY` positions in grid space.

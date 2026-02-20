@@ -17,6 +17,7 @@ export * from "./grid/BufferUtils";
 export * from "./influences/Influence";
 export * from "./influences/InfluenceManager";
 export * from "./influences/HoverInfluence";
+export * from "./influences/HoverShape";
 export * from "./influences/RippleInfluence";
 export * from "./influences/OrganicNoiseInfluence";
 export * from "./influences/Masks/MaskInfluence";

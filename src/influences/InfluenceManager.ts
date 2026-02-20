@@ -6,6 +6,13 @@ interface InfluenceManagerOptions {
   smoothingRadius?: number;
 }
 
+export interface InfluenceCell {
+  x: number;
+  y: number;
+  maxSize: number;
+  targetSize: number;
+}
+
 export class InfluenceManager {
 
   private influences: Influence[] = [];
@@ -69,7 +76,7 @@ export class InfluenceManager {
   // ----------------------------------------
 
   apply(
-    cells: any[],
+    cells: InfluenceCell[],
     getCellIndex: (x: number, y: number) => number
   ): void {
 
@@ -138,7 +145,7 @@ export class InfluenceManager {
   // COMPRESIÓN
   // ----------------------------------------
 
-  private compressField(cells: any[]): void {
+  private compressField(cells: InfluenceCell[]): void {
 
     const k = this.compressionStrength;
 
@@ -163,7 +170,7 @@ export class InfluenceManager {
   // ----------------------------------------
 
   private smoothField(
-    cells: any[],
+    cells: InfluenceCell[],
     getCellIndex: (x: number, y: number) => number
   ): void {
 

@@ -1,5 +1,4 @@
 import { Influence, BlendMode } from "./Influence";
-import { clamp } from "../utils/math";
 
 export class RippleInfluence implements Influence {
   priority = 10;
@@ -38,6 +37,12 @@ export class RippleInfluence implements Influence {
     y: number,
     maxSize: number
   ): number {
+    const falloff = this.getRingFactorAt(x, y);
+    if (falloff <= 0) return 0;
+    return falloff * maxSize * this.strength;
+  }
+
+  getRingFactorAt(x: number, y: number): number {
     const dx = x - this.originX;
     const dy = y - this.originY;
 
@@ -53,6 +58,14 @@ export class RippleInfluence implements Influence {
     // curva cuadrática suave
     const falloff = normalized * normalized;
 
-    return falloff * maxSize * this.strength;
+    return falloff;
+  }
+
+  getOriginX(): number {
+    return this.originX;
+  }
+
+  getOriginY(): number {
+    return this.originY;
   }
 }

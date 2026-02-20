@@ -2,13 +2,13 @@ import { MaskInfluence } from "./MaskInfluence";
 
 export class MorphMaskInfluence extends MaskInfluence {
   protected onUpdate(delta: number): void {
-    throw new Error("Method not implemented.");
+    void delta;
   }
 
   private maskA: MaskInfluence;
   private maskB: MaskInfluence;
 
-  private duration: number;
+  private durationMs: number;
   private time = 0;
   private t = 0;
   private finished = false;
@@ -16,13 +16,13 @@ export class MorphMaskInfluence extends MaskInfluence {
   constructor(
     maskA: MaskInfluence,
     maskB: MaskInfluence,
-    duration: number = 1
+    durationMs: number = 1000
   ) {
     super(maskA["centerX"], maskA["centerY"], 1);
 
     this.maskA = maskA;
     this.maskB = maskB;
-    this.duration = duration;
+    this.durationMs = durationMs;
 
     this.width = Math.max(
       maskA.getWidth(),
@@ -42,7 +42,7 @@ export class MorphMaskInfluence extends MaskInfluence {
     if (this.finished) return;
 
     this.time += delta;
-    this.t = Math.min(1, this.time / this.duration);
+    this.t = Math.min(1, this.time / this.durationMs);
 
     const bufferA = this.maskA.getBuffer();
     const bufferB = this.maskB.getBuffer();

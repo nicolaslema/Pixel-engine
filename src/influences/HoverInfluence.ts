@@ -1,19 +1,33 @@
 import { Influence, BlendMode } from "./Influence";
-import { smoothstep } from "../utils/math";
 import { PixelEngine } from "../core/PixelEngine";
+import { computeHoverFalloff, HoverShape } from "./HoverShape";
+
+export interface HoverInfluenceOptions {
+  radiusY?: number;
+  shape?: HoverShape;
+}
 
 export class HoverInfluence implements Influence {
   priority = 5;
   blendMode: BlendMode = "add";
+  private radiusY: number;
+  private shape: HoverShape;
 
   constructor(
     private engine: PixelEngine,
     private radius: number,
     private breathSpeed: number,
-    private strength: number
-  ) {}
+    private strength: number,
+    options: HoverInfluenceOptions = {}
+  ) {
+    this.radiusY = options.radiusY ?? radius;
+    this.shape = options.shape ?? "circle";
+  }
 
-  update(): void {}
+  update(_delta = 0): void {
+    void _delta;
+    void this.breathSpeed;
+  }
 
   isAlive(): boolean {
     return true;
@@ -25,8 +39,8 @@ export class HoverInfluence implements Influence {
     return {
       minX: x - this.radius,
       maxX: x + this.radius,
-      minY: y - this.radius,
-      maxY: y + this.radius
+      minY: y - this.radiusY,
+      maxY: y + this.radiusY
     };
   }
 
@@ -40,12 +54,13 @@ export class HoverInfluence implements Influence {
     const dx = x - mx;
     const dy = y - my;
 
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    const falloff = computeHoverFalloff(dx, dy, {
+      radiusX: this.radius,
+      radiusY: this.radiusY,
+      shape: this.shape
+    });
 
-    if (distance > this.radius) return 0;
-
-    const falloff =
-      1 - smoothstep(0, this.radius, distance);
+    if (falloff <= 0) return 0;
 
     return falloff * maxSize * this.strength;
   }

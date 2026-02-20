@@ -1,6 +1,6 @@
 import { MaskInfluence } from "./MaskInfluence";
 
-interface TextMaskOptions {
+export interface TextMaskOptions {
   font: string;
   strength?: number;
   blurRadius?: number;

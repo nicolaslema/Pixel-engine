@@ -1,12 +1,12 @@
 import { MaskInfluence } from "./MaskInfluence";
 
-type SampleMode =
+export type SampleMode =
   | "alpha"
   | "luminance"
   | "threshold"
   | "invert";
 
-interface ImageMaskOptions {
+export interface ImageMaskOptions {
   scale?: number;
   strength?: number;
   sampleMode?: SampleMode;
@@ -17,7 +17,7 @@ interface ImageMaskOptions {
 
 export class ImageMaskInfluence extends MaskInfluence {
   protected onUpdate(delta: number): void {
-    throw new Error("Method not implemented.");
+    void delta;
   }
 
   private canvas: HTMLCanvasElement;

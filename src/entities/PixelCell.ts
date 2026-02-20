@@ -1,8 +1,12 @@
 export class PixelCell {
   public size = 0;
   public targetSize = 0;
+  public offsetX = 0;
+  public offsetY = 0;
 
   public readonly maxSize: number;
+  public readonly baseColor: string;
+  public color: string;
 
   private breathPhase: number;
   private breathOffset: number;
@@ -10,11 +14,13 @@ export class PixelCell {
   constructor(
     public readonly x: number,
     public readonly y: number,
-    public readonly color: string,
+    color: string,
     public readonly gap: number,
     maxSizeFactor: number
   ) {
     this.maxSize = gap * maxSizeFactor;
+    this.baseColor = color;
+    this.color = color;
 
     this.breathPhase = Math.random() * Math.PI * 2;
     this.breathOffset = Math.random() * 0.5 + 0.5;
@@ -34,10 +40,15 @@ export class PixelCell {
   }
 
   public update(
-    expandEase: number,
-    delta: number
+    expandEase: number
   ): void {
     this.size +=
       (this.targetSize - this.size) * expandEase;
+  }
+
+  public resetVisualState(): void {
+    this.offsetX = 0;
+    this.offsetY = 0;
+    this.color = this.baseColor;
   }
 }
