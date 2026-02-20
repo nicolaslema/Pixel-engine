@@ -1,5 +1,18 @@
 # Pixel Engine API
 
+This document describes the stable v1 API baseline for `PixelGridEffect`.
+
+## Stable Surface
+
+`PixelGridConfig` is strict and centered on:
+- `hoverEffects`
+- `rippleEffects`
+- `breathing`
+- `imageMask` / `textMask`
+- `autoMorph`
+
+Legacy top-level fields were removed (e.g. `hoverMode`, `rippleSpeed`).
+
 ## Quick Start
 
 ```ts
@@ -94,6 +107,17 @@ Morph:
 - `holdTextMs?: number`
 - `morphDurationMs?: number`
 - `intervalMs?: number`
+
+## Defaults
+
+- `hoverEffects.mode`: `"classic"`
+- `hoverEffects.radius`: `120`
+- `hoverEffects.shape`: `"circle"`
+- `rippleEffects.speed`: `0.5`
+- `rippleEffects.thickness`: `50`
+- `rippleEffects.strength`: `30`
+- `rippleEffects.maxRipples`: `20`
+- `breathing.enabled`: `false`
 
 ## Example: Reactive Hover + Breathing
 
@@ -198,5 +222,73 @@ const grid = new PixelGridEffect(engine, 1000, 700, {
 canvas.addEventListener("click", (e) => {
   const rect = canvas.getBoundingClientRect();
   grid.triggerRipple(e.clientX - rect.left, e.clientY - rect.top);
+});
+```
+
+## React Wrapper Pattern
+
+```tsx
+import { useEffect, useRef } from "react";
+import { PixelEngine, PixelGridEffect } from "pixel-engine";
+
+export function PixelGridCanvas() {
+  const ref = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+
+    const width = 1000;
+    const height = 700;
+    const engine = new PixelEngine({ canvas, width, height });
+    const grid = new PixelGridEffect(engine, width, height, {
+      colors: ["#334155", "#475569", "#64748b"],
+      gap: 6,
+      expandEase: 0.08,
+      breathSpeed: 1,
+      hoverEffects: { mode: "reactive", radius: 110, shape: "vignette" },
+      rippleEffects: { speed: 0.5, thickness: 50, strength: 30, maxRipples: 25 }
+    });
+
+    engine.addEntity(grid);
+    engine.start();
+
+    return () => engine.destroy();
+  }, []);
+
+  return <canvas ref={ref} />;
+}
+```
+
+## Vue Wrapper Pattern
+
+```ts
+import { onMounted, onBeforeUnmount, ref } from "vue";
+import { PixelEngine, PixelGridEffect } from "pixel-engine";
+
+const canvasRef = ref<HTMLCanvasElement | null>(null);
+let engine: PixelEngine | null = null;
+
+onMounted(() => {
+  const canvas = canvasRef.value;
+  if (!canvas) return;
+
+  engine = new PixelEngine({ canvas, width: 1000, height: 700 });
+  const grid = new PixelGridEffect(engine, 1000, 700, {
+    colors: ["#334155", "#475569", "#64748b"],
+    gap: 6,
+    expandEase: 0.08,
+    breathSpeed: 1,
+    hoverEffects: { mode: "reactive", radius: 110, shape: "circle" },
+    rippleEffects: { speed: 0.5, thickness: 48, strength: 28, maxRipples: 25 }
+  });
+
+  engine.addEntity(grid);
+  engine.start();
+});
+
+onBeforeUnmount(() => {
+  engine?.destroy();
+  engine = null;
 });
 ```

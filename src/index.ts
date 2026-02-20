@@ -27,6 +27,7 @@ export * from "./influences/Masks/MorphMaskInfluence";
 
 export * from "./entities/PixelCell";
 export * from "./entities/PixelGridEffect";
+export * from "./entities/pixel-grid/types";
 
 export * from "./renderers/IRenderer";
 export * from "./renderers/Canvas2DRenderer";

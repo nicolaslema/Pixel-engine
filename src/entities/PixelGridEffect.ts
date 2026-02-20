@@ -2,106 +2,26 @@ import { Entity } from "../scene/Entity";
 import { IRenderer } from "../renderers/IRenderer";
 import { PixelCell } from "./PixelCell";
 import { PixelEngine } from "../core/PixelEngine";
+import {
+  PixelGridConfig,
+  PixelGridInfluenceOptions,
+  ResolvedPixelGridConfig
+} from "./pixel-grid/types";
+import { resolvePixelGridConfig } from "./pixel-grid/normalizeConfig";
 
 import { InfluenceManager } from "../influences/InfluenceManager";
 import { RippleInfluence } from "../influences/RippleInfluence";
 import { HoverInfluence } from "../influences/HoverInfluence";
 import { OrganicNoiseInfluence } from "../influences/OrganicNoiseInfluence";
-import { TextMaskInfluence, TextMaskOptions } from "../influences/Masks/TextMaskInfluence";
-import { ImageMaskInfluence, ImageMaskOptions } from "../influences/Masks/ImageMaskInfluence";
+import { TextMaskInfluence } from "../influences/Masks/TextMaskInfluence";
+import { ImageMaskInfluence } from "../influences/Masks/ImageMaskInfluence";
 import { MorphMaskInfluence } from "../influences/Masks/MorphMaskInfluence";
-import { computeHoverFalloff, HoverShape } from "../influences/HoverShape";
+import { computeHoverFalloff } from "../influences/HoverShape";
 import { clamp } from "../utils/math";
 
-type HoverMode = "classic" | "reactive";
-type ReactiveHoverScope = "all" | "activeOnly" | "imageMask";
 type MorphState = "image" | "toText" | "text" | "toImage";
-type InitialMask = "image" | "text";
-
-interface HoverEffectsOptions {
-  mode?: HoverMode;
-  radius?: number;
-  radiusY?: number;
-  shape?: HoverShape;
-  strength?: number;
-  interactionScope?: ReactiveHoverScope;
-  deactivate?: number;
-  displace?: number;
-  jitter?: number;
-  tintPalette?: string[];
-}
-
-interface RippleEffectsOptions {
-  speed?: number;
-  thickness?: number;
-  strength?: number;
-  maxRipples?: number;
-  enabled?: boolean;
-  deactivateMultiplier?: number;
-  displaceMultiplier?: number;
-  jitterMultiplier?: number;
-  tintPalette?: string[];
-}
-
-interface BreathingOptions {
-  enabled?: boolean;
-  speed?: number;
-  radius?: number;
-  radiusY?: number;
-  shape?: HoverShape;
-  strength?: number;
-  minOpacity?: number;
-  maxOpacity?: number;
-  affectHover?: boolean;
-  affectImage?: boolean;
-  affectText?: boolean;
-}
-
-interface AutoMorphOptions {
-  enabled?: boolean;
-  holdImageMs?: number;
-  holdTextMs?: number;
-  morphDurationMs?: number;
-  intervalMs?: number;
-}
-
-interface PixelGridTextMaskConfig extends TextMaskOptions {
-  text?: string;
-  centerX?: number;
-  centerY?: number;
-}
-
-interface PixelGridImageMaskConfig extends ImageMaskOptions {
-  src?: string;
-  centerX?: number;
-  centerY?: number;
-}
-
-export interface PixelGridConfig {
-  colors: string[];
-  gap: number;
-  expandEase: number;
-  breathSpeed: number;
-
-  organicRadius?: number;
-  organicStrength?: number;
-  organicSpeed?: number;
-
-  hoverEffects?: HoverEffectsOptions;
-  rippleEffects?: RippleEffectsOptions;
-  breathing?: BreathingOptions;
-  autoMorph?: AutoMorphOptions;
-
-  imageMask?: PixelGridImageMaskConfig;
-  textMask?: PixelGridTextMaskConfig;
-  initialMask?: InitialMask;
-}
-
-export interface PixelGridInfluenceOptions {
-  ripple?: boolean;
-  hover?: boolean;
-  organic?: boolean;
-}
+const TRANSPARENT_PIXEL_DATA_URI =
+  "data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=";
 
 export class PixelGridEffect extends Entity {
   private cells: PixelCell[] = [];
@@ -117,10 +37,10 @@ export class PixelGridEffect extends Entity {
   private rippleThickness: number;
   private rippleStrength: number;
 
-  private readonly hoverEffects: Required<HoverEffectsOptions>;
-  private readonly rippleEffects: Required<RippleEffectsOptions>;
-  private readonly breathing: Required<BreathingOptions>;
-  private readonly autoMorph: Required<AutoMorphOptions>;
+  private readonly hoverEffects: ResolvedPixelGridConfig["hoverEffects"];
+  private readonly rippleEffects: ResolvedPixelGridConfig["rippleEffects"];
+  private readonly breathing: ResolvedPixelGridConfig["breathing"];
+  private readonly autoMorph: ResolvedPixelGridConfig["autoMorph"];
 
   private imageMask: ImageMaskInfluence;
   private textMask: TextMaskInfluence;
@@ -146,61 +66,16 @@ export class PixelGridEffect extends Entity {
 
     this.columns = Math.ceil(width / config.gap);
     this.rows = Math.ceil(height / config.gap);
-    const hoverEffects = config.hoverEffects;
-    const rippleEffects = config.rippleEffects;
+    const resolved = resolvePixelGridConfig(config);
+    this.hoverEffects = resolved.hoverEffects;
+    this.rippleEffects = resolved.rippleEffects;
+    this.breathing = resolved.breathing;
+    this.autoMorph = resolved.autoMorph;
 
-    this.hoverEffects = {
-      mode: hoverEffects?.mode ?? "classic",
-      radius: hoverEffects?.radius ?? 120,
-      radiusY: hoverEffects?.radiusY ?? hoverEffects?.radius ?? 120,
-      shape: hoverEffects?.shape ?? "circle",
-      strength: hoverEffects?.strength ?? 1,
-      interactionScope: hoverEffects?.interactionScope ?? "imageMask",
-      deactivate: hoverEffects?.deactivate ?? 0.8,
-      displace: hoverEffects?.displace ?? 3,
-      jitter: hoverEffects?.jitter ?? 1.25,
-      tintPalette: hoverEffects?.tintPalette ?? []
-    };
-
-    this.rippleSpeed = rippleEffects?.speed ?? 0.5;
-    this.rippleThickness = rippleEffects?.thickness ?? 50;
-    this.rippleStrength = rippleEffects?.strength ?? 30;
-    this.maxRipples = rippleEffects?.maxRipples ?? 20;
-
-    this.rippleEffects = {
-      speed: this.rippleSpeed,
-      thickness: this.rippleThickness,
-      strength: this.rippleStrength,
-      maxRipples: this.maxRipples,
-      enabled: rippleEffects?.enabled ?? true,
-      deactivateMultiplier: rippleEffects?.deactivateMultiplier ?? 1,
-      displaceMultiplier: rippleEffects?.displaceMultiplier ?? 1,
-      jitterMultiplier: rippleEffects?.jitterMultiplier ?? 1,
-      tintPalette: rippleEffects?.tintPalette ?? []
-    };
-
-    this.breathing = {
-      enabled: config.breathing?.enabled ?? false,
-      speed: config.breathing?.speed ?? 1,
-      radius: config.breathing?.radius ?? this.hoverEffects.radius,
-      radiusY: config.breathing?.radiusY ?? config.breathing?.radius ?? this.hoverEffects.radiusY,
-      shape: config.breathing?.shape ?? this.hoverEffects.shape,
-      strength: config.breathing?.strength ?? 0.9,
-      minOpacity: config.breathing?.minOpacity ?? 0.55,
-      maxOpacity: config.breathing?.maxOpacity ?? 1,
-      affectHover: config.breathing?.affectHover ?? true,
-      affectImage: config.breathing?.affectImage ?? true,
-      affectText: config.breathing?.affectText ?? true
-    };
-
-    const sharedMorphHold = config.autoMorph?.intervalMs;
-    this.autoMorph = {
-      enabled: config.autoMorph?.enabled ?? false,
-      holdImageMs: config.autoMorph?.holdImageMs ?? sharedMorphHold ?? 2500,
-      holdTextMs: config.autoMorph?.holdTextMs ?? sharedMorphHold ?? 2500,
-      morphDurationMs: config.autoMorph?.morphDurationMs ?? 1200,
-      intervalMs: config.autoMorph?.intervalMs ?? 0
-    };
+    this.rippleSpeed = this.rippleEffects.speed;
+    this.rippleThickness = this.rippleEffects.thickness;
+    this.rippleStrength = this.rippleEffects.strength;
+    this.maxRipples = this.rippleEffects.maxRipples;
 
     this.createGrid();
 
@@ -216,7 +91,7 @@ export class PixelGridEffect extends Entity {
     );
 
     this.imageMask = new ImageMaskInfluence(
-      config.imageMask?.src ?? " ",
+      config.imageMask?.src ?? TRANSPARENT_PIXEL_DATA_URI,
       config.imageMask?.centerX ?? centerX,
       config.imageMask?.centerY ?? centerY,
       {
@@ -240,7 +115,7 @@ export class PixelGridEffect extends Entity {
       }
     );
 
-    const initialMask = config.initialMask ?? "image";
+    const initialMask = resolved.initialMask;
     this.morphState = initialMask === "image" ? "image" : "text";
     this.influenceManager.add(initialMask === "image" ? this.imageMask : this.textMask);
 

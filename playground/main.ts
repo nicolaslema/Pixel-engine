@@ -23,7 +23,7 @@ const effect = new PixelGridEffect(
     breathSpeed: 0.9,
 
     hoverEffects: {
-      mode: "reactive",
+      mode: "classic",
       radius: 100,
       radiusY: 100,
       shape: "circle",
@@ -32,7 +32,7 @@ const effect = new PixelGridEffect(
       deactivate: 0.85,
       displace: 4,
       jitter: 1.2,
-      tintPalette: ["#60a5fa", "#f59e0b", "#f43f5e"]
+     
     },
     rippleEffects: {
       speed: 0.5,
@@ -43,7 +43,7 @@ const effect = new PixelGridEffect(
       deactivateMultiplier: 0.7,
       displaceMultiplier: 1.25,
       jitterMultiplier: 1.2,
-      tintPalette: ["#60a5fa", "#f59e0b", "#f43f5e"]
+      
     
     },
     breathing: {
@@ -66,7 +66,7 @@ const effect = new PixelGridEffect(
       morphDurationMs: 100,
       intervalMs: 1050
     },
-    initialMask: "image",
+    initialMask: "text",
     imageMask: {
       src: "/src/assets/cat.png",
       centerX: 400,
