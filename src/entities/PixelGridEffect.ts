@@ -1,7 +1,7 @@
 import { Entity } from "../scene/Entity";
 import { IRenderer } from "../renderers/IRenderer";
 import { PixelCell } from "./PixelCell";
-import { PixelEngine } from "../core/PixelEngine";
+import { EnginePointerSource } from "../core/EnginePointerSource";
 import {
   PixelGridConfig,
   PixelGridInfluenceOptions,
@@ -54,7 +54,7 @@ export class PixelGridEffect extends Entity {
   private readonly maskState: MaskStateMachine;
 
   constructor(
-    private engine: PixelEngine,
+    private engine: EnginePointerSource,
     private width: number,
     private height: number,
     private config: PixelGridConfig,

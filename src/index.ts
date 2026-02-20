@@ -1,4 +1,5 @@
 export * from "./core/PixelEngine";
+export * from "./core/EnginePointerSource";
 export * from "./core/Time";
 export * from "./core/GameLoop";
 export * from "./core/types";

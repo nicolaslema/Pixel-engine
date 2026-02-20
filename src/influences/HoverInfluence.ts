@@ -1,5 +1,5 @@
 import { Influence, BlendMode } from "./Influence";
-import { PixelEngine } from "../core/PixelEngine";
+import { EnginePointerSource } from "../core/EnginePointerSource";
 import { computeHoverFalloff, HoverShape } from "./HoverShape";
 
 export interface HoverInfluenceOptions {
@@ -14,7 +14,7 @@ export class HoverInfluence implements Influence {
   private shape: HoverShape;
 
   constructor(
-    private engine: PixelEngine,
+    private engine: EnginePointerSource,
     private radius: number,
     private breathSpeed: number,
     private strength: number,
