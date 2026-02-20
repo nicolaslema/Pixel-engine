@@ -1,5 +1,5 @@
 import { Entity } from "../scene/Entity";
-import { Renderer } from "../renderers/Renderer";
+import { IRenderer } from "../renderers/IRenderer";
 import { PixelCell } from "./PixelCell";
 import { PixelEngine } from "../core/PixelEngine";
 
@@ -242,7 +242,7 @@ private loopEnabled = true;
   // RENDER
   // =====================================================
 
-  render(renderer: Renderer): void {
+  render(renderer: IRenderer): void {
 
     const ctx = renderer.getContext();
     const batches = new Map<string, PixelCell[]>();

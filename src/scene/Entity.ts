@@ -1,4 +1,4 @@
-import { Renderer } from "../renderers/Renderer";
+import { IRenderer } from "../renderers/IRenderer";
 import { Transform } from "./Transform";
 
 let ENTITY_ID = 0;
@@ -17,5 +17,5 @@ export abstract class Entity {
 
   update(_deltaTime: number): void {}
 
-  render(_renderer: Renderer): void {}
+  render(_renderer: IRenderer): void {}
 }

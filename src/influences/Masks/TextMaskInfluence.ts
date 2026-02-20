@@ -33,6 +33,8 @@ export class TextMaskInfluence extends MaskInfluence {
 
   update(): void {}
 
+  protected onUpdate(_: number): void {}
+
   generateMask(): void {
     this.ctx.font = this.font;
 

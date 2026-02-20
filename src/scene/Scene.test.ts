@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { Scene } from "./Scene";
 import { Entity } from "./Entity";
-import { Renderer } from "../renderers/Renderer";
+import { IRenderer } from "../renderers/IRenderer";
 
 class TestEntity extends Entity {
   update = vi.fn();
@@ -23,7 +23,7 @@ describe("Scene", () => {
     const scene = new Scene();
     const entity = new TestEntity();
 
-    const renderer = {} as Renderer;
+    const renderer = {} as IRenderer;
 
     scene.add(entity);
     scene.render(renderer);

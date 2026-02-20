@@ -6,14 +6,19 @@ import { Entity } from "../scene/Entity";
 import { InputSystem } from "../input/InputSystem";
 import { Time } from "./Time";
 import { Camera2D } from "../renderers/Camera2D";
+import { IRenderer } from "../renderers/IRenderer";
 
 export class PixelEngine {
-  private renderer: Renderer;
+  private renderer: IRenderer;
   private loop: GameLoop;
   private scene: Scene;
   private input: InputSystem;
   private time: Time;
   private camera: Camera2D;
+  private clearColor: string;
+  private dpr: number;
+  private width: number;
+  private height: number;
 
   // ==============================
   // Mouse State (expuesto para influences)
@@ -27,51 +32,25 @@ export class PixelEngine {
   };
 
   constructor(private options: PixelEngineOptions) {
-    const { canvas, width, height } = options;
+    const { canvas, width, height, rendererFactory } = options;
 
-    canvas.width = width;
-    canvas.height = height;
+    this.width = width;
+    this.height = height;
+    this.clearColor = options.clearColor ?? "black";
+    this.dpr = Math.max(1, options.devicePixelRatio ?? window.devicePixelRatio ?? 1);
 
-    this.renderer = new Renderer(canvas);
+    this.renderer = rendererFactory
+      ? rendererFactory(canvas)
+      : new Renderer(canvas);
     this.scene = new Scene();
     this.input = new InputSystem(canvas);
     this.time = new Time();
     this.camera = new Camera2D();
-
-    this.setupMouseTracking(canvas);
+    this.renderer.resize(width, height, this.dpr);
 
     this.loop = new GameLoop((deltaTime: number) => {
       this.update(deltaTime);
       this.render();
-    });
-  }
-
-  // ==============================
-  // Mouse Tracking
-  // ==============================
-
-  private setupMouseTracking(canvas: HTMLCanvasElement): void {
-    canvas.addEventListener("mousemove", (e) => {
-      const rect = canvas.getBoundingClientRect();
-
-      this.mouse.x = e.clientX - rect.left;
-      this.mouse.y = e.clientY - rect.top;
-    });
-
-    canvas.addEventListener("mouseenter", () => {
-      this.mouse.inside = true;
-    });
-
-    canvas.addEventListener("mouseleave", () => {
-      this.mouse.inside = false;
-    });
-
-    canvas.addEventListener("mousedown", () => {
-      this.mouse.down = true;
-    });
-
-    canvas.addEventListener("mouseup", () => {
-      this.mouse.down = false;
     });
   }
 
@@ -81,6 +60,12 @@ export class PixelEngine {
 
   private update(deltaTime: number): void {
     const scaledDelta = this.time.update(deltaTime);
+    const mouse = this.input.getMouse();
+
+    this.mouse.x = mouse.x;
+    this.mouse.y = mouse.y;
+    this.mouse.inside = mouse.inside;
+    this.mouse.down = mouse.isDown;
 
     this.scene.update(scaledDelta);
   }
@@ -90,7 +75,7 @@ export class PixelEngine {
 
     ctx.save();
 
-    this.renderer.clear("black");
+    this.renderer.clear(this.clearColor);
 
     this.camera.apply(ctx);
 
@@ -114,6 +99,7 @@ export class PixelEngine {
   destroy(): void {
     this.stop();
     this.input.destroy();
+    this.renderer.destroy?.();
   }
 
   // ==============================
@@ -136,7 +122,7 @@ export class PixelEngine {
   // Systems Access
   // ==============================
 
-  getRenderer(): Renderer {
+  getRenderer(): IRenderer {
     return this.renderer;
   }
 
@@ -158,5 +144,18 @@ export class PixelEngine {
 
   isRunning(): boolean {
     return this.loop.isRunning();
+  }
+
+  resize(width: number, height: number): void {
+    this.width = width;
+    this.height = height;
+    this.renderer.resize(width, height, this.dpr);
+  }
+
+  getSize(): { width: number; height: number } {
+    return {
+      width: this.width,
+      height: this.height
+    };
   }
 }

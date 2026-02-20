@@ -1,5 +1,5 @@
 import { Entity } from "../scene/Entity";
-import { Renderer } from "../renderers/Renderer";
+import { IRenderer } from "../renderers/IRenderer";
 
 export class SpriteEntity extends Entity {
   width: number;
@@ -13,7 +13,7 @@ export class SpriteEntity extends Entity {
     this.color = color;
   }
 
-  render(renderer: Renderer): void {
+  render(renderer: IRenderer): void {
     const ctx = renderer.getContext();
 
     ctx.save();

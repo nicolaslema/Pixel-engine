@@ -1,5 +1,5 @@
 import { Entity } from "./Entity";
-import { Renderer } from "../renderers/Renderer";
+import { IRenderer } from "../renderers/IRenderer";
 
 export class Scene {
   private entities: Entity[] = [];
@@ -25,7 +25,7 @@ export class Scene {
     }
   }
 
-  render(renderer: Renderer): void {
+  render(renderer: IRenderer): void {
     for (const entity of this.entities) {
       if (entity.active) {
         entity.render(renderer);

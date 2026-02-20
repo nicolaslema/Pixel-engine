@@ -4,15 +4,24 @@
   "description": "A high-performance typed-array based pixel simulation engine.",
   "author": "TuNombre",
   "license": "MIT",
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
   "files": [
     "dist"
   ],
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsup",
+    "build:playground": "vite build",
     "preview": "vite preview",
     "test": "vitest"
   },

@@ -2,6 +2,7 @@ export interface MouseState {
   x: number;
   y: number;
   isDown: boolean;
+  inside: boolean;
 }
 
 export class InputSystem {
@@ -9,6 +10,7 @@ export class InputSystem {
     x: -9999,
     y: -9999,
     isDown: false,
+    inside: false
   };
 
   constructor(private canvas: HTMLCanvasElement) {
@@ -17,6 +19,7 @@ export class InputSystem {
 
   private attach(): void {
     this.canvas.addEventListener("mousemove", this.handleMove);
+    this.canvas.addEventListener("mouseenter", this.handleEnter);
     this.canvas.addEventListener("mousedown", this.handleDown);
     this.canvas.addEventListener("mouseup", this.handleUp);
     this.canvas.addEventListener("mouseleave", this.handleLeave);
@@ -40,6 +43,11 @@ export class InputSystem {
     this.mouse.x = -9999;
     this.mouse.y = -9999;
     this.mouse.isDown = false;
+    this.mouse.inside = false;
+  };
+
+  private handleEnter = (): void => {
+    this.mouse.inside = true;
   };
 
   getMouse(): Readonly<MouseState> {
@@ -48,6 +56,7 @@ export class InputSystem {
 
   destroy(): void {
     this.canvas.removeEventListener("mousemove", this.handleMove);
+    this.canvas.removeEventListener("mouseenter", this.handleEnter);
     this.canvas.removeEventListener("mousedown", this.handleDown);
     this.canvas.removeEventListener("mouseup", this.handleUp);
     this.canvas.removeEventListener("mouseleave", this.handleLeave);
