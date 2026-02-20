@@ -15,13 +15,12 @@ import { HoverInfluence } from "../influences/HoverInfluence";
 import { OrganicNoiseInfluence } from "../influences/OrganicNoiseInfluence";
 import { TextMaskInfluence } from "../influences/Masks/TextMaskInfluence";
 import { ImageMaskInfluence } from "../influences/Masks/ImageMaskInfluence";
+import { MaskInfluence } from "../influences/Masks/MaskInfluence";
 import { MorphMaskInfluence } from "../influences/Masks/MorphMaskInfluence";
 import { computeHoverFalloff } from "../influences/HoverShape";
 import { clamp } from "../utils/math";
 
 type MorphState = "image" | "toText" | "text" | "toImage";
-const TRANSPARENT_PIXEL_DATA_URI =
-  "data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=";
 
 export class PixelGridEffect extends Entity {
   private cells: PixelCell[] = [];
@@ -42,8 +41,8 @@ export class PixelGridEffect extends Entity {
   private readonly breathing: ResolvedPixelGridConfig["breathing"];
   private readonly autoMorph: ResolvedPixelGridConfig["autoMorph"];
 
-  private imageMask: ImageMaskInfluence;
-  private textMask: TextMaskInfluence;
+  private imageMask: ImageMaskInfluence | null = null;
+  private textMask: TextMaskInfluence | null = null;
   private morphMask: MorphMaskInfluence | null = null;
   private morphState: MorphState;
   private stateTimer = 0;
@@ -90,34 +89,45 @@ export class PixelGridEffect extends Entity {
       }
     );
 
-    this.imageMask = new ImageMaskInfluence(
-      config.imageMask?.src ?? TRANSPARENT_PIXEL_DATA_URI,
-      config.imageMask?.centerX ?? centerX,
-      config.imageMask?.centerY ?? centerY,
-      {
-        scale: config.imageMask?.scale ?? 3,
-        sampleMode: config.imageMask?.sampleMode ?? "invert",
-        strength: config.imageMask?.strength ?? 1.5,
-        threshold: config.imageMask?.threshold,
-        blurRadius: config.imageMask?.blurRadius,
-        dithering: config.imageMask?.dithering
-      }
-    );
+    if (config.imageMask?.src) {
+      this.imageMask = new ImageMaskInfluence(
+        config.imageMask.src,
+        config.imageMask.centerX ?? centerX,
+        config.imageMask.centerY ?? centerY,
+        {
+          scale: config.imageMask.scale ?? 3,
+          sampleMode: config.imageMask.sampleMode ?? "invert",
+          strength: config.imageMask.strength ?? 1.5,
+          threshold: config.imageMask.threshold,
+          blurRadius: config.imageMask.blurRadius,
+          dithering: config.imageMask.dithering
+        }
+      );
+    }
 
-    this.textMask = new TextMaskInfluence(
-      config.textMask?.text ?? " ",
-      config.textMask?.centerX ?? centerX,
-      config.textMask?.centerY ?? centerY,
-      {
-        font: config.textMask?.font ?? "bold 160px Arial",
-        strength: config.textMask?.strength ?? 0.9,
-        blurRadius: config.textMask?.blurRadius ?? 2
-      }
-    );
+    if (config.textMask?.text) {
+      this.textMask = new TextMaskInfluence(
+        config.textMask.text,
+        config.textMask.centerX ?? centerX,
+        config.textMask.centerY ?? centerY,
+        {
+          font: config.textMask.font ?? "bold 160px Arial",
+          strength: config.textMask.strength ?? 0.9,
+          blurRadius: config.textMask.blurRadius ?? 2
+        }
+      );
+    }
 
     const initialMask = resolved.initialMask;
     this.morphState = initialMask === "image" ? "image" : "text";
-    this.influenceManager.add(initialMask === "image" ? this.imageMask : this.textMask);
+
+    if (initialMask === "image") {
+      if (this.imageMask) this.influenceManager.add(this.imageMask);
+      else if (this.textMask) this.influenceManager.add(this.textMask);
+    } else {
+      if (this.textMask) this.influenceManager.add(this.textMask);
+      else if (this.imageMask) this.influenceManager.add(this.imageMask);
+    }
 
     this.setupInfluences();
   }
@@ -144,8 +154,8 @@ export class PixelGridEffect extends Entity {
   }
 
   private startMorph(
-    from: ImageMaskInfluence | TextMaskInfluence,
-    to: ImageMaskInfluence | TextMaskInfluence,
+    from: MaskInfluence,
+    to: MaskInfluence,
     nextState: MorphState
   ): void {
     this.influenceManager.remove(from);
@@ -164,6 +174,7 @@ export class PixelGridEffect extends Entity {
 
   private updateMorphState(delta: number): void {
     if (!this.autoMorph.enabled) return;
+    if (!this.imageMask || !this.textMask) return;
 
     if (this.morphMask && !this.morphMask.isAlive()) {
       this.influenceManager.remove(this.morphMask);
@@ -266,8 +277,12 @@ export class PixelGridEffect extends Entity {
   }
 
   private getMaskWeight(cell: PixelCell): number {
-    const image = this.imageMask.getInfluence(cell.x, cell.y, 1);
-    const text = this.textMask.getInfluence(cell.x, cell.y, 1);
+    const image = this.imageMask
+      ? this.imageMask.getInfluence(cell.x, cell.y, 1)
+      : 0;
+    const text = this.textMask
+      ? this.textMask.getInfluence(cell.x, cell.y, 1)
+      : 0;
     const morph = this.morphMask
       ? this.morphMask.getInfluence(cell.x, cell.y, 1)
       : 0;
@@ -276,11 +291,14 @@ export class PixelGridEffect extends Entity {
   }
 
   private getImageMaskWeight(cell: PixelCell): number {
+    if (!this.imageMask) return 0;
     return this.imageMask.getInfluence(cell.x, cell.y, 1);
   }
 
   private getTextMaskWeight(cell: PixelCell): number {
-    const text = this.textMask.getInfluence(cell.x, cell.y, 1);
+    const text = this.textMask
+      ? this.textMask.getInfluence(cell.x, cell.y, 1)
+      : 0;
     const morph = this.morphMask
       ? this.morphMask.getInfluence(cell.x, cell.y, 1)
       : 0;

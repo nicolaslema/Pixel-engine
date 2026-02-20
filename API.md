@@ -100,6 +100,8 @@ Mask sources and placement:
 - `imageMask?: { src?, centerX?, centerY?, scale?, sampleMode?, strength?, threshold?, blurRadius?, dithering? }`
 - `textMask?: { text?, centerX?, centerY?, font?, strength?, blurRadius? }`
 
+Masks are optional. If neither `imageMask` nor `textMask` is provided, `PixelGridEffect` runs with hover/ripple/organic effects only.
+
 Morph:
 - `autoMorph?:`
 - `enabled?: boolean`

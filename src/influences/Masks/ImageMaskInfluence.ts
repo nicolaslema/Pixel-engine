@@ -85,20 +85,31 @@ export class ImageMaskInfluence extends MaskInfluence {
     this.canvas.height = this.height;
 
     this.ctx.clearRect(0, 0, this.width, this.height);
-    this.ctx.drawImage(
-      this.image,
-      0,
-      0,
-      this.width,
-      this.height
-    );
+    try {
+      this.ctx.drawImage(
+        this.image,
+        0,
+        0,
+        this.width,
+        this.height
+      );
+    } catch {
+      this.failed = true;
+      return;
+    }
 
-    const imageData = this.ctx.getImageData(
-      0,
-      0,
-      this.width,
-      this.height
-    );
+    let imageData: ImageData;
+    try {
+      imageData = this.ctx.getImageData(
+        0,
+        0,
+        this.width,
+        this.height
+      );
+    } catch {
+      this.failed = true;
+      return;
+    }
 
     const data = imageData.data;
     this.buffer = new Float32Array(this.width * this.height);

@@ -95,6 +95,7 @@ export function PixelBackground() {
 ```
 
 Use bundled asset URLs (`import img from "./asset.png"`). Do not use `"/src/..."` paths in app projects.
+`imageMask` and `textMask` are optional; you can run the effect with no masks.
 
 ## Architecture
 

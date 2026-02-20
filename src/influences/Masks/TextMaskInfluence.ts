@@ -40,35 +40,44 @@ export class TextMaskInfluence extends MaskInfluence {
 
     const metrics = this.ctx.measureText(this.text);
 
-    this.width = Math.ceil(metrics.width);
-    this.height = Math.ceil(
+    this.width = Math.max(1, Math.ceil(metrics.width));
+    this.height = Math.max(1, Math.ceil(
       metrics.actualBoundingBoxAscent +
       metrics.actualBoundingBoxDescent
-    );
+    ));
 
     this.canvas.width = this.width;
     this.canvas.height = this.height;
+
+    this.buffer = new Float32Array(
+      this.width * this.height
+    );
+
+    if (!this.text.trim()) {
+      return;
+    }
 
     this.ctx.font = this.font;
     this.ctx.fillStyle = "white";
     this.ctx.fillText(
       this.text,
       0,
-      metrics.actualBoundingBoxAscent
+      Math.max(1, metrics.actualBoundingBoxAscent)
     );
 
-    const imageData = this.ctx.getImageData(
-      0,
-      0,
-      this.width,
-      this.height
-    );
+    let imageData: ImageData;
+    try {
+      imageData = this.ctx.getImageData(
+        0,
+        0,
+        this.width,
+        this.height
+      );
+    } catch {
+      return;
+    }
 
     const data = imageData.data;
-
-    this.buffer = new Float32Array(
-      this.width * this.height
-    );
 
     for (let i = 0; i < this.buffer.length; i++) {
       const alpha = data[i * 4 + 3] / 255;
