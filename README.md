@@ -29,6 +29,7 @@ Early development – v0.1.0
 - `npm run test`: runs Vitest.
 - `npm run build`: builds distributable library with `tsup` (ESM/CJS/types).
 - `npm run build:playground`: builds playground app with Vite.
+- API reference and examples: `API.md`
 
 ## Design Goals
 
@@ -42,15 +43,16 @@ Early development – v0.1.0
 
 - `classic`: additive radial influence.
 - `reactive`: post-process interaction that can:
-  - deactivate pixels (`reactiveHover.deactivate`)
-  - displace pixels (`reactiveHover.displace`, `reactiveHover.jitter`)
-  - recolor pixels (`reactiveHover.tintPalette`)
-  - limit scope (`reactiveHover.interactionScope`: `"all" | "activeOnly" | "imageMask"`)
-  - change hover shape (`reactiveHover.shape`: `"circle" | "vignette"`)
+  - deactivate pixels (`hoverEffects.deactivate`)
+  - displace pixels (`hoverEffects.displace`, `hoverEffects.jitter`)
+  - recolor pixels (`hoverEffects.tintPalette`)
+  - limit scope (`hoverEffects.interactionScope`: `"all" | "activeOnly" | "imageMask"`)
+  - change hover shape (`hoverEffects.shape`: `"circle" | "vignette"`)
 
 Additional controls:
 
-- `hoverShape` / `hoverRadiusY`: shape + vertical radius for classic hover.
-- `reactiveRipple`: make ripple pass apply reactive color/displacement/jitter/deactivation.
+- `hoverEffects`: unified hover config (`mode`, `radius`, `shape`, `palette`, `jitter`, `displace`, etc.).
+- `rippleEffects`: unified ripple config (`speed`, `thickness`, `strength`, `maxRipples`, plus reactive visual modifiers).
+- `breathing`: organic opacity breathing for hover/image/text affected pixels.
 - `autoMorph.intervalMs`: extra wait between morph cycles.
 - `imageMask` / `textMask`: set source text/image and their `centerX`/`centerY` positions in grid space.

@@ -3,6 +3,7 @@ export class PixelCell {
   public targetSize = 0;
   public offsetX = 0;
   public offsetY = 0;
+  public opacity = 1;
 
   public readonly maxSize: number;
   public readonly baseColor: string;
@@ -50,5 +51,6 @@ export class PixelCell {
     this.offsetX = 0;
     this.offsetY = 0;
     this.color = this.baseColor;
+    this.opacity = 1;
   }
 }

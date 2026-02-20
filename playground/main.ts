@@ -18,22 +18,14 @@ const effect = new PixelGridEffect(
   height,
   {
     colors: ["#334155", "#475569", "#64748b"],
-    gap: 7,
+    gap: 5,
     expandEase: 0.08,
     breathSpeed: 0.9,
 
-    rippleSpeed: 0.5,
-    rippleThickness: 50,
-    rippleStrength: 30,
-    maxRipples: 50,
-
-    hoverRadius: 100,
-    hoverRadiusY: 100,
-    hoverShape: "circle",
-    hoverMode: "reactive",
-    reactiveHover: {
+    hoverEffects: {
+      mode: "classic",
       radius: 100,
-      radiusY: 90,
+      radiusY: 100,
       shape: "circle",
       strength: 1,
       interactionScope: "all",
@@ -42,18 +34,37 @@ const effect = new PixelGridEffect(
       jitter: 1.2,
       tintPalette: ["#60a5fa", "#f59e0b", "#f43f5e"]
     },
-    reactiveRipple: {
+    rippleEffects: {
+      speed: 0.5,
+      thickness: 50,
+      strength: 30,
+      maxRipples: 50,
       enabled: true,
+      deactivateMultiplier: 0.7,
       displaceMultiplier: 1.25,
       jitterMultiplier: 1.2,
-      tintPalette: ["#22d3ee", "#fb7185", "#fde047"]
+      tintPalette: ["#60a5fa", "#f59e0b", "#f43f5e"]
+    
+    },
+    breathing: {
+      enabled: true,
+      speed: 1.9,
+      radius: 140,
+      radiusY: 100,
+      shape: "circle",
+      strength: 0.6,
+      minOpacity: 0.45,
+      maxOpacity: 1,
+      affectHover: true,
+      affectImage: true,
+      affectText: true
     },
     autoMorph: {
       enabled: false,
       holdImageMs: 100,
       holdTextMs: 100,
       morphDurationMs: 100,
-      intervalMs: 850
+      intervalMs: 1050
     },
     initialMask: "image",
     imageMask: {
@@ -64,6 +75,7 @@ const effect = new PixelGridEffect(
       sampleMode: "threshold",
       strength: 1.4
     },
+    
     textMask: {
       text: "HERZA",
       centerX: 400,
@@ -73,14 +85,15 @@ const effect = new PixelGridEffect(
       blurRadius: 2
     },
 
-    organicRadius: 1000,
-    organicStrength: 0.5,
-    organicSpeed: 0.0002,
+    organicRadius: 500,
+    organicStrength: 0.2,
+    organicSpeed: 0.009,
 
   },
   {
     ripple:true,
     hover: true,
+    
     
 
   

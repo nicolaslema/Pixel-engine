@@ -11,13 +11,15 @@ import { TextMaskInfluence, TextMaskOptions } from "../influences/Masks/TextMask
 import { ImageMaskInfluence, ImageMaskOptions } from "../influences/Masks/ImageMaskInfluence";
 import { MorphMaskInfluence } from "../influences/Masks/MorphMaskInfluence";
 import { computeHoverFalloff, HoverShape } from "../influences/HoverShape";
+import { clamp } from "../utils/math";
 
 type HoverMode = "classic" | "reactive";
 type ReactiveHoverScope = "all" | "activeOnly" | "imageMask";
 type MorphState = "image" | "toText" | "text" | "toImage";
 type InitialMask = "image" | "text";
 
-interface ReactiveHoverOptions {
+interface HoverEffectsOptions {
+  mode?: HoverMode;
   radius?: number;
   radiusY?: number;
   shape?: HoverShape;
@@ -29,12 +31,30 @@ interface ReactiveHoverOptions {
   tintPalette?: string[];
 }
 
-interface ReactiveRippleOptions {
+interface RippleEffectsOptions {
+  speed?: number;
+  thickness?: number;
+  strength?: number;
+  maxRipples?: number;
   enabled?: boolean;
   deactivateMultiplier?: number;
   displaceMultiplier?: number;
   jitterMultiplier?: number;
   tintPalette?: string[];
+}
+
+interface BreathingOptions {
+  enabled?: boolean;
+  speed?: number;
+  radius?: number;
+  radiusY?: number;
+  shape?: HoverShape;
+  strength?: number;
+  minOpacity?: number;
+  maxOpacity?: number;
+  affectHover?: boolean;
+  affectImage?: boolean;
+  affectText?: boolean;
 }
 
 interface AutoMorphOptions {
@@ -63,22 +83,25 @@ export interface PixelGridConfig {
   expandEase: number;
   breathSpeed: number;
 
-  rippleSpeed: number;
-  rippleThickness: number;
-  rippleStrength: number;
+  rippleSpeed?: number;
+  rippleThickness?: number;
+  rippleStrength?: number;
 
   hoverRadius?: number;
   hoverRadiusY?: number;
   hoverShape?: HoverShape;
+  hoverMode?: HoverMode;
 
   organicRadius?: number;
   organicStrength?: number;
   organicSpeed?: number;
 
   maxRipples?: number;
-  hoverMode?: HoverMode;
-  reactiveHover?: ReactiveHoverOptions;
-  reactiveRipple?: ReactiveRippleOptions;
+  reactiveHover?: HoverEffectsOptions;
+  hoverEffects?: HoverEffectsOptions;
+  reactiveRipple?: RippleEffectsOptions;
+  rippleEffects?: RippleEffectsOptions;
+  breathing?: BreathingOptions;
   autoMorph?: AutoMorphOptions;
 
   imageMask?: PixelGridImageMaskConfig;
@@ -102,9 +125,13 @@ export class PixelGridEffect extends Entity {
   private influenceManager: InfluenceManager;
   private maxRipples: number;
   private reactiveTime = 0;
+  private rippleSpeed: number;
+  private rippleThickness: number;
+  private rippleStrength: number;
 
-  private readonly reactiveHover: Required<ReactiveHoverOptions>;
-  private readonly reactiveRipple: Required<ReactiveRippleOptions>;
+  private readonly hoverEffects: Required<HoverEffectsOptions>;
+  private readonly rippleEffects: Required<RippleEffectsOptions>;
+  private readonly breathing: Required<BreathingOptions>;
   private readonly autoMorph: Required<AutoMorphOptions>;
 
   private imageMask: ImageMaskInfluence;
@@ -131,26 +158,51 @@ export class PixelGridEffect extends Entity {
 
     this.columns = Math.ceil(width / config.gap);
     this.rows = Math.ceil(height / config.gap);
-    this.maxRipples = config.maxRipples ?? 20;
+    const hoverEffects = config.hoverEffects ?? config.reactiveHover;
+    const rippleEffects = config.rippleEffects ?? config.reactiveRipple;
 
-    this.reactiveHover = {
-      radius: config.reactiveHover?.radius ?? config.hoverRadius ?? 120,
-      radiusY: config.reactiveHover?.radiusY ?? config.hoverRadiusY ?? config.reactiveHover?.radius ?? config.hoverRadius ?? 120,
-      shape: config.reactiveHover?.shape ?? config.hoverShape ?? "circle",
-      strength: config.reactiveHover?.strength ?? 1,
-      interactionScope: config.reactiveHover?.interactionScope ?? "imageMask",
-      deactivate: config.reactiveHover?.deactivate ?? 0.8,
-      displace: config.reactiveHover?.displace ?? 3,
-      jitter: config.reactiveHover?.jitter ?? 1.25,
-      tintPalette: config.reactiveHover?.tintPalette ?? []
+    this.hoverEffects = {
+      mode: hoverEffects?.mode ?? config.hoverMode ?? "classic",
+      radius: hoverEffects?.radius ?? config.hoverRadius ?? 120,
+      radiusY: hoverEffects?.radiusY ?? config.hoverRadiusY ?? hoverEffects?.radius ?? config.hoverRadius ?? 120,
+      shape: hoverEffects?.shape ?? config.hoverShape ?? "circle",
+      strength: hoverEffects?.strength ?? 1,
+      interactionScope: hoverEffects?.interactionScope ?? "imageMask",
+      deactivate: hoverEffects?.deactivate ?? 0.8,
+      displace: hoverEffects?.displace ?? 3,
+      jitter: hoverEffects?.jitter ?? 1.25,
+      tintPalette: hoverEffects?.tintPalette ?? []
     };
 
-    this.reactiveRipple = {
-      enabled: config.reactiveRipple?.enabled ?? true,
-      deactivateMultiplier: config.reactiveRipple?.deactivateMultiplier ?? 1,
-      displaceMultiplier: config.reactiveRipple?.displaceMultiplier ?? 1,
-      jitterMultiplier: config.reactiveRipple?.jitterMultiplier ?? 1,
-      tintPalette: config.reactiveRipple?.tintPalette ?? []
+    this.rippleSpeed = rippleEffects?.speed ?? config.rippleSpeed ?? 0.5;
+    this.rippleThickness = rippleEffects?.thickness ?? config.rippleThickness ?? 50;
+    this.rippleStrength = rippleEffects?.strength ?? config.rippleStrength ?? 30;
+    this.maxRipples = rippleEffects?.maxRipples ?? config.maxRipples ?? 20;
+
+    this.rippleEffects = {
+      speed: this.rippleSpeed,
+      thickness: this.rippleThickness,
+      strength: this.rippleStrength,
+      maxRipples: this.maxRipples,
+      enabled: rippleEffects?.enabled ?? true,
+      deactivateMultiplier: rippleEffects?.deactivateMultiplier ?? 1,
+      displaceMultiplier: rippleEffects?.displaceMultiplier ?? 1,
+      jitterMultiplier: rippleEffects?.jitterMultiplier ?? 1,
+      tintPalette: rippleEffects?.tintPalette ?? []
+    };
+
+    this.breathing = {
+      enabled: config.breathing?.enabled ?? false,
+      speed: config.breathing?.speed ?? 1,
+      radius: config.breathing?.radius ?? this.hoverEffects.radius,
+      radiusY: config.breathing?.radiusY ?? config.breathing?.radius ?? this.hoverEffects.radiusY,
+      shape: config.breathing?.shape ?? this.hoverEffects.shape,
+      strength: config.breathing?.strength ?? 0.9,
+      minOpacity: config.breathing?.minOpacity ?? 0.55,
+      maxOpacity: config.breathing?.maxOpacity ?? 1,
+      affectHover: config.breathing?.affectHover ?? true,
+      affectImage: config.breathing?.affectImage ?? true,
+      affectText: config.breathing?.affectText ?? true
     };
 
     const sharedMorphHold = config.autoMorph?.intervalMs;
@@ -176,7 +228,7 @@ export class PixelGridEffect extends Entity {
     );
 
     this.imageMask = new ImageMaskInfluence(
-      config.imageMask?.src ?? "/src/assets/cat.png",
+      config.imageMask?.src ?? " ",
       config.imageMask?.centerX ?? centerX,
       config.imageMask?.centerY ?? centerY,
       {
@@ -190,7 +242,7 @@ export class PixelGridEffect extends Entity {
     );
 
     this.textMask = new TextMaskInfluence(
-      config.textMask?.text ?? "PIXEL",
+      config.textMask?.text ?? " ",
       config.textMask?.centerX ?? centerX,
       config.textMask?.centerY ?? centerY,
       {
@@ -290,7 +342,7 @@ export class PixelGridEffect extends Entity {
   }
 
   private setupInfluences(): void {
-    const hoverMode = this.config.hoverMode ?? "classic";
+    const hoverMode = this.hoverEffects.mode;
 
     if (
       this.influenceOptions.hover &&
@@ -299,12 +351,12 @@ export class PixelGridEffect extends Entity {
       this.influenceManager.add(
         new HoverInfluence(
           this.engine,
-          this.config.hoverRadius ?? 120,
+          this.hoverEffects.radius,
           this.config.breathSpeed,
-          1,
+          this.hoverEffects.strength,
           {
-            radiusY: this.config.hoverRadiusY ?? this.config.hoverRadius ?? 120,
-            shape: this.config.hoverShape ?? "circle"
+            radiusY: this.hoverEffects.radiusY,
+            shape: this.hoverEffects.shape
           }
         )
       );
@@ -324,23 +376,56 @@ export class PixelGridEffect extends Entity {
   }
 
   private isInsideAnyMask(cell: PixelCell): boolean {
-    const threshold = 0.05;
-    const image = this.imageMask.getInfluence(cell.x, cell.y, 1);
-    if (image > threshold) return true;
+    return this.getMaskWeight(cell) > 0.05;
+  }
 
-    const text = this.textMask.getInfluence(cell.x, cell.y, 1);
-    if (text > threshold) return true;
+  private getHoverWeight(cell: PixelCell): number {
+    const mouse = this.engine.mouse;
+    if (!mouse.inside) return 0;
 
-    if (this.morphMask) {
-      const morph = this.morphMask.getInfluence(cell.x, cell.y, 1);
-      return morph > threshold;
+    const dx = cell.x - mouse.x;
+    const dy = cell.y - mouse.y;
+    const hoverMode = this.hoverEffects.mode;
+
+    if (hoverMode === "reactive") {
+      return computeHoverFalloff(dx, dy, {
+        radiusX: this.hoverEffects.radius,
+        radiusY: this.hoverEffects.radiusY,
+        shape: this.hoverEffects.shape
+      });
     }
 
-    return false;
+    return computeHoverFalloff(dx, dy, {
+      radiusX: this.hoverEffects.radius,
+      radiusY: this.hoverEffects.radiusY,
+      shape: this.hoverEffects.shape
+    });
+  }
+
+  private getMaskWeight(cell: PixelCell): number {
+    const image = this.imageMask.getInfluence(cell.x, cell.y, 1);
+    const text = this.textMask.getInfluence(cell.x, cell.y, 1);
+    const morph = this.morphMask
+      ? this.morphMask.getInfluence(cell.x, cell.y, 1)
+      : 0;
+
+    return Math.max(image, text, morph);
+  }
+
+  private getImageMaskWeight(cell: PixelCell): number {
+    return this.imageMask.getInfluence(cell.x, cell.y, 1);
+  }
+
+  private getTextMaskWeight(cell: PixelCell): number {
+    const text = this.textMask.getInfluence(cell.x, cell.y, 1);
+    const morph = this.morphMask
+      ? this.morphMask.getInfluence(cell.x, cell.y, 1)
+      : 0;
+    return Math.max(text, morph);
   }
 
   private shouldAffectWithReactiveHover(cell: PixelCell): boolean {
-    const scope = this.reactiveHover.interactionScope;
+    const scope = this.hoverEffects.interactionScope;
 
     if (scope === "all") return true;
     if (scope === "activeOnly") return cell.targetSize > 0.001;
@@ -359,9 +444,9 @@ export class PixelGridEffect extends Entity {
     const strength = Math.max(0, interaction);
     if (strength <= 0) return;
 
-    const deactivate = this.reactiveHover.deactivate * multipliers.deactivate;
-    const displace = this.reactiveHover.displace * multipliers.displace;
-    const jitter = this.reactiveHover.jitter * multipliers.jitter;
+    const deactivate = this.hoverEffects.deactivate * multipliers.deactivate;
+    const displace = this.hoverEffects.displace * multipliers.displace;
+    const jitter = this.hoverEffects.jitter * multipliers.jitter;
 
     if (deactivate > 0) {
       cell.targetSize *= Math.max(0, 1 - deactivate * strength);
@@ -391,26 +476,18 @@ export class PixelGridEffect extends Entity {
   }
 
   private applyReactiveHover(): void {
-    const hoverMode = this.config.hoverMode ?? "classic";
+    const hoverMode = this.hoverEffects.mode;
     if (!this.influenceOptions.hover || hoverMode !== "reactive") return;
-
-    const mouse = this.engine.mouse;
-    if (!mouse.inside) return;
 
     for (let i = 0; i < this.cells.length; i++) {
       const cell = this.cells[i];
       if (!this.shouldAffectWithReactiveHover(cell)) continue;
 
-      const dx = cell.x - mouse.x;
-      const dy = cell.y - mouse.y;
-      const falloff = computeHoverFalloff(dx, dy, {
-        radiusX: this.reactiveHover.radius,
-        radiusY: this.reactiveHover.radiusY,
-        shape: this.reactiveHover.shape
-      });
-
+      const falloff = this.getHoverWeight(cell);
       if (falloff <= 0) continue;
-      const interaction = falloff * this.reactiveHover.strength;
+
+      const mouse = this.engine.mouse;
+      const interaction = falloff * this.hoverEffects.strength;
 
       this.applyReactiveEffectsToCell(
         cell,
@@ -418,21 +495,19 @@ export class PixelGridEffect extends Entity {
         interaction,
         mouse.x,
         mouse.y,
-        this.reactiveHover.tintPalette
+        this.hoverEffects.tintPalette
       );
     }
   }
 
   private applyReactiveRippleEffects(): void {
-    const hoverMode = this.config.hoverMode ?? "classic";
-    if (hoverMode !== "reactive") return;
     if (!this.influenceOptions.ripple) return;
-    if (!this.reactiveRipple.enabled) return;
+    if (!this.rippleEffects.enabled) return;
     if (this.activeRipples.length === 0) return;
 
-    const palette = this.reactiveRipple.tintPalette.length > 0
-      ? this.reactiveRipple.tintPalette
-      : this.reactiveHover.tintPalette;
+    const palette = this.rippleEffects.tintPalette.length > 0
+      ? this.rippleEffects.tintPalette
+      : this.hoverEffects.tintPalette;
 
     for (let r = 0; r < this.activeRipples.length; r++) {
       const ripple = this.activeRipples[r];
@@ -453,7 +528,7 @@ export class PixelGridEffect extends Entity {
           const factor = ripple.getRingFactorAt(cell.x, cell.y);
           if (factor <= 0) continue;
 
-          const interaction = factor * this.reactiveHover.strength;
+          const interaction = factor * this.hoverEffects.strength;
 
           this.applyReactiveEffectsToCell(
             cell,
@@ -463,13 +538,72 @@ export class PixelGridEffect extends Entity {
             ripple.getOriginY(),
             palette,
             {
-              deactivate: this.reactiveRipple.deactivateMultiplier,
-              displace: this.reactiveRipple.displaceMultiplier,
-              jitter: this.reactiveRipple.jitterMultiplier
+              deactivate: this.rippleEffects.deactivateMultiplier,
+              displace: this.rippleEffects.displaceMultiplier,
+              jitter: this.rippleEffects.jitterMultiplier
             }
           );
         }
       }
+    }
+  }
+
+  private applyBreathing(): void {
+    if (!this.breathing.enabled) return;
+
+    const minOpacity = clamp(this.breathing.minOpacity, 0, 1);
+    const maxOpacity = clamp(this.breathing.maxOpacity, minOpacity, 1);
+    const speed = Math.max(0, this.breathing.speed);
+    const strength = clamp(this.breathing.strength, 0, 1);
+
+    for (let i = 0; i < this.cells.length; i++) {
+      const cell = this.cells[i];
+      if (cell.targetSize <= 0.001) continue;
+
+      let influenceWeight = 0;
+
+      if (this.breathing.affectHover) {
+        const mouse = this.engine.mouse;
+        if (mouse.inside) {
+          const dx = cell.x - mouse.x;
+          const dy = cell.y - mouse.y;
+
+          const hoverWeight = computeHoverFalloff(dx, dy, {
+            radiusX: this.breathing.radius,
+            radiusY: this.breathing.radiusY,
+            shape: this.breathing.shape
+          });
+
+          influenceWeight = Math.max(influenceWeight, hoverWeight);
+        }
+      }
+
+      if (this.breathing.affectImage) {
+        influenceWeight = Math.max(
+          influenceWeight,
+          this.getImageMaskWeight(cell)
+        );
+      }
+
+      if (this.breathing.affectText) {
+        influenceWeight = Math.max(
+          influenceWeight,
+          this.getTextMaskWeight(cell)
+        );
+      }
+
+      if (influenceWeight <= 0.001) continue;
+
+      const breathWave = cell.getBreathFactor(this.reactiveTime, speed);
+      const randomSlice = Math.floor(this.reactiveTime * 0.001 * speed * 2);
+      const seed = Math.sin((i + 1) * 12.9898 + randomSlice * 78.233) * 43758.5453;
+      const randomPulse = seed - Math.floor(seed);
+      const wave = clamp((breathWave * 0.65) + (randomPulse * 0.35), 0, 1);
+      const breathOpacity =
+        minOpacity + (maxOpacity - minOpacity) * wave;
+      const mix = clamp(influenceWeight * strength, 0, 1);
+
+      cell.opacity = 1 + (breathOpacity - 1) * mix;
     }
   }
 
@@ -492,6 +626,7 @@ export class PixelGridEffect extends Entity {
 
     this.applyReactiveHover();
     this.applyReactiveRippleEffects();
+    this.applyBreathing();
 
     for (let i = 0; i < this.cells.length; i++) {
       this.cells[i].update(this.config.expandEase);
@@ -501,6 +636,7 @@ export class PixelGridEffect extends Entity {
   render(renderer: IRenderer): void {
     const ctx = renderer.getContext();
     let currentColor = "";
+    let currentOpacity = -1;
 
     for (let i = 0; i < this.cells.length; i++) {
       const cell = this.cells[i];
@@ -511,6 +647,11 @@ export class PixelGridEffect extends Entity {
         ctx.fillStyle = currentColor;
       }
 
+      if (cell.opacity !== currentOpacity) {
+        currentOpacity = cell.opacity;
+        ctx.globalAlpha = currentOpacity;
+      }
+
       const offset = (cell.gap - cell.size) * 0.5;
 
       ctx.fillRect(
@@ -519,6 +660,10 @@ export class PixelGridEffect extends Entity {
         cell.size | 0,
         cell.size | 0
       );
+    }
+
+    if (currentOpacity !== 1) {
+      ctx.globalAlpha = 1;
     }
   }
 
@@ -536,9 +681,9 @@ export class PixelGridEffect extends Entity {
     const ripple = new RippleInfluence(
       x,
       y,
-      this.config.rippleSpeed,
-      this.config.rippleThickness,
-      this.config.rippleStrength,
+      this.rippleSpeed,
+      this.rippleThickness,
+      this.rippleStrength,
       maxRadius
     );
 
