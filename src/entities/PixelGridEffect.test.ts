@@ -39,4 +39,29 @@ describe("PixelGridEffect", () => {
 
     engine.destroy();
   });
+
+  it("should apply canvasBackground from config and allow runtime update", () => {
+    const canvas = document.createElement("canvas");
+    const engine = new PixelEngine({
+      canvas,
+      width: 200,
+      height: 120,
+      clearColor: "black"
+    });
+
+    const effect = new PixelGridEffect(engine, 200, 120, {
+      colors: ["#334155", "#475569", "#64748b"],
+      gap: 8,
+      expandEase: 0.08,
+      breathSpeed: 1,
+      canvasBackground: "#112233"
+    });
+
+    expect(engine.getClearColor()).toBe("#112233");
+
+    effect.setCanvasBackground(null);
+    expect(engine.getClearColor()).toBeNull();
+
+    engine.destroy();
+  });
 });

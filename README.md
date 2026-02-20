@@ -36,19 +36,29 @@ import { PixelGridEffect } from "@pixel-engine/effects";
 
 const canvas = document.getElementById("app") as HTMLCanvasElement;
 
-const engine = new PixelEngine({ canvas, width: 1000, height: 700 });
+const engine = new PixelEngine({
+  canvas,
+  width: 1000,
+  height: 700
+});
 
 const grid = new PixelGridEffect(engine, 1000, 700, {
   colors: ["#334155", "#475569", "#64748b"],
   gap: 6,
   expandEase: 0.08,
   breathSpeed: 0.9,
+  canvasBackground: "transparent", // or "#0f172a", "rgba(0,0,0,0.35)", null
   hoverEffects: { mode: "reactive", radius: 120, shape: "vignette" },
   rippleEffects: { speed: 0.5, thickness: 48, strength: 28, maxRipples: 30 }
 });
 
 engine.addEntity(grid);
 engine.start();
+
+// Runtime control:
+grid.setCanvasBackground("#111827");
+grid.setCanvasBackground("transparent");
+grid.setCanvasBackground(null);
 ```
 
 ## React Example
@@ -105,6 +115,7 @@ export function PixelBackground() {
 
 Use bundled asset URLs (`import img from "./asset.png"`). Do not use `"/src/..."` paths in app projects.
 `imageMask` and `textMask` are optional; you can run the effect with no masks.
+`canvasBackground` is the recommended way to control canvas clear color from effect config.
 
 ## Architecture
 

@@ -11,7 +11,7 @@ export interface PixelEngineOptions {
   height: number;
   canvas: HTMLCanvasElement;
   quality?: QualityLevel;
-  clearColor?: string;
+  clearColor?: string | null;
   devicePixelRatio?: number;
   rendererFactory?: PixelEngineRendererFactory;
 }

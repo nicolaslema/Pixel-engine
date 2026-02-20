@@ -13,7 +13,12 @@ export class Canvas2DRenderer implements IRenderer {
     this.ctx = context;
   }
 
-  clear(color = "black"): void {
+  clear(color: string | null = "black"): void {
+    if (color === null || color === "transparent") {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      return;
+    }
+
     this.ctx.fillStyle = color;
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
   }

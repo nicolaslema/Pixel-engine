@@ -70,6 +70,7 @@ export interface PixelGridConfig {
   gap: number;
   expandEase: number;
   breathSpeed: number;
+  canvasBackground?: string | null;
 
   organicRadius?: number;
   organicStrength?: number;

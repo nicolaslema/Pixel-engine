@@ -15,7 +15,7 @@ export class PixelEngine {
   private input: InputSystem;
   private time: Time;
   private camera: Camera2D;
-  private clearColor: string;
+  private clearColor: string | null;
   private dpr: number;
   private width: number;
   private height: number;
@@ -157,5 +157,13 @@ export class PixelEngine {
       width: this.width,
       height: this.height
     };
+  }
+
+  setClearColor(color: string | null): void {
+    this.clearColor = color;
+  }
+
+  getClearColor(): string | null {
+    return this.clearColor;
   }
 }

@@ -2,6 +2,28 @@
 
 This guide covers migration to the formal v1 stable baseline and the new package split.
 
+## Update: Canvas Background via PixelGridEffect (v1.0.1)
+
+Canvas clear color can now be controlled directly from `PixelGridEffect`:
+- `canvasBackground?: string | null` in `PixelGridConfig`
+- `grid.setCanvasBackground(color | null)` at runtime
+
+Recommended for effect-driven setups:
+
+```ts
+const engine = new PixelEngine({ canvas, width, height });
+const grid = new PixelGridEffect(engine, width, height, {
+  colors: ["#334155", "#475569", "#64748b"],
+  gap: 6,
+  expandEase: 0.08,
+  breathSpeed: 0.9,
+  canvasBackground: "transparent"
+});
+```
+
+If you previously set background only with `engine.setClearColor(...)`, it still works.
+For `PixelGridEffect` scenes, move that value to `canvasBackground` to keep config centralized.
+
 ## 1. Package Strategy
 
 ### Before

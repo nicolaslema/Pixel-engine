@@ -7,4 +7,6 @@ export interface EnginePointerState {
 
 export interface EnginePointerSource {
   mouse: EnginePointerState;
+  setClearColor?(color: string | null): void;
+  getClearColor?(): string | null;
 }

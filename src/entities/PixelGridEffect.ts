@@ -79,6 +79,7 @@ export class PixelGridEffect extends Entity {
     this.rippleEffects = resolved.rippleEffects;
     this.breathing = resolved.breathing;
     this.autoMorph = resolved.autoMorph;
+    this.applyCanvasBackgroundFromConfig();
 
     this.rippleSpeed = this.rippleEffects.speed;
     this.rippleThickness = this.rippleEffects.thickness;
@@ -136,6 +137,11 @@ export class PixelGridEffect extends Entity {
     });
 
     this.setupInfluences();
+  }
+
+  private applyCanvasBackgroundFromConfig(): void {
+    if (this.config.canvasBackground === undefined) return;
+    this.engine.setClearColor?.(this.config.canvasBackground);
   }
 
   private createGrid(): void {
@@ -366,5 +372,9 @@ export class PixelGridEffect extends Entity {
 
     this.runtime.activeRipples.push(ripple);
     this.influenceManager.add(ripple);
+  }
+
+  setCanvasBackground(background: string | null): void {
+    this.engine.setClearColor?.(background);
   }
 }

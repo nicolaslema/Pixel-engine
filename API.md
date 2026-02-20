@@ -10,6 +10,7 @@ This document describes the stable v1 API baseline for `PixelGridEffect`.
 - `breathing`
 - `imageMask` / `textMask`
 - `autoMorph`
+- `canvasBackground`
 
 Legacy top-level fields were removed (e.g. `hoverMode`, `rippleSpeed`).
 
@@ -49,6 +50,21 @@ engine.addEntity(grid);
 engine.start();
 ```
 
+## PixelEngine Background Control
+
+- `clearColor?: string | null` in `PixelEngine` options.
+- Use CSS colors for solid background (`"#111827"`, `"rgba(...)"`).
+- Use `"transparent"` or `null` for true transparent clear (`clearRect`).
+- For `PixelGridEffect` usage, prefer `canvasBackground` in effect config.
+
+Runtime:
+
+```ts
+engine.setClearColor("#0f172a");
+engine.setClearColor("transparent");
+engine.setClearColor(null);
+```
+
 ## PixelGridConfig
 
 Core:
@@ -56,6 +72,7 @@ Core:
 - `gap: number`
 - `expandEase: number`
 - `breathSpeed: number`
+- `canvasBackground?: string | null` (applies engine clear color from `PixelGridEffect` config)
 
 Ripple:
 - `rippleEffects?:`
@@ -227,6 +244,23 @@ canvas.addEventListener("click", (e) => {
   grid.triggerRipple(e.clientX - rect.left, e.clientY - rect.top);
 });
 ```
+
+## Canvas Background From PixelGridEffect
+
+```ts
+const grid = new PixelGridEffect(engine, width, height, {
+  colors: ["#334155", "#475569", "#64748b"],
+  gap: 6,
+  expandEase: 0.08,
+  breathSpeed: 0.9,
+  canvasBackground: "transparent" // or "#0f172a", null
+});
+
+grid.setCanvasBackground("#111827");
+grid.setCanvasBackground(null);
+```
+
+`canvasBackground` in config is applied at effect construction time.
 
 ## React Wrapper Pattern
 

@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.0.1] - 2026-02-20
+
+### Added
+- `canvasBackground?: string | null` in `PixelGridConfig` to control canvas clear color from `PixelGridEffect`.
+- `PixelGridEffect#setCanvasBackground(color: string | null)` for runtime background updates.
+- Transparent clear support (`null` or `"transparent"`) in Canvas2D renderer clear path.
+- Tests for renderer clear behavior and `PixelEngine` clear-color runtime updates.
+
+### Changed
+- Playground background controls were simplified:
+  - canvas background is now controlled only by `PixelGridEffect` config/runtime API
+  - playground UI keeps only page background control for transparency testing
+- Documentation updated (`README.md`, `API.md`, `MIGRATION.md`) to reflect effect-driven canvas background flow.
+
 ## [1.0.0] - 2026-02-20
 
 ### Added
