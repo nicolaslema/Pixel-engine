@@ -116,13 +116,13 @@ private loopEnabled = true;
     // Estado inicial: solo imagen
     this.influenceManager.add(this.imageMask);
     this.influenceManager.add(this.textMask);
+    this.setupInfluences();
 
-    // // Lanzar morph después de 2 segundos
+    // Lanzar morph después de 2 segundos
     // setTimeout(() => {
     //   this.startMorph();
     // }, 2000);
 
-    // this.setupInfluences();
   }
 
   // =====================================================
