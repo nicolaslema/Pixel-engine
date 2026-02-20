@@ -8,6 +8,20 @@ import {
   ResolvedPixelGridConfig
 } from "./pixel-grid/types";
 import { resolvePixelGridConfig } from "./pixel-grid/normalizeConfig";
+import {
+  createPixelGridRuntimeState,
+  PixelGridRuntimeState,
+  compactAliveRipples,
+  resetCells
+} from "./pixel-grid/internal/runtime-state";
+import { createMaskStateMachine } from "./pixel-grid/internal/mask-state-machine";
+import {
+  applyReactiveEffectsToCell,
+  applyReactiveRipple,
+  getHoverWeight,
+  shouldAffectCell
+} from "./pixel-grid/internal/reactive-effects";
+import { applyBreathingSystem } from "./pixel-grid/internal/breathing-system";
 
 import { InfluenceManager } from "../influences/InfluenceManager";
 import { RippleInfluence } from "../influences/RippleInfluence";
@@ -15,37 +29,29 @@ import { HoverInfluence } from "../influences/HoverInfluence";
 import { OrganicNoiseInfluence } from "../influences/OrganicNoiseInfluence";
 import { TextMaskInfluence } from "../influences/Masks/TextMaskInfluence";
 import { ImageMaskInfluence } from "../influences/Masks/ImageMaskInfluence";
-import { MaskInfluence } from "../influences/Masks/MaskInfluence";
-import { MorphMaskInfluence } from "../influences/Masks/MorphMaskInfluence";
-import { computeHoverFalloff } from "../influences/HoverShape";
-import { clamp } from "../utils/math";
-
-type MorphState = "image" | "toText" | "text" | "toImage";
+import { MaskStateMachine } from "./pixel-grid/internal/mask-state-machine";
 
 export class PixelGridEffect extends Entity {
   private cells: PixelCell[] = [];
-  private activeRipples: RippleInfluence[] = [];
+  private readonly runtime: PixelGridRuntimeState;
 
   private columns: number;
   private rows: number;
 
   private influenceManager: InfluenceManager;
+  private readonly inverseGap: number;
   private maxRipples: number;
-  private reactiveTime = 0;
   private rippleSpeed: number;
   private rippleThickness: number;
   private rippleStrength: number;
+  private readonly getCellIndexRef = (x: number, y: number): number => x * this.rows + y;
 
   private readonly hoverEffects: ResolvedPixelGridConfig["hoverEffects"];
   private readonly rippleEffects: ResolvedPixelGridConfig["rippleEffects"];
   private readonly breathing: ResolvedPixelGridConfig["breathing"];
   private readonly autoMorph: ResolvedPixelGridConfig["autoMorph"];
 
-  private imageMask: ImageMaskInfluence | null = null;
-  private textMask: TextMaskInfluence | null = null;
-  private morphMask: MorphMaskInfluence | null = null;
-  private morphState: MorphState;
-  private stateTimer = 0;
+  private readonly maskState: MaskStateMachine;
 
   constructor(
     private engine: PixelEngine,
@@ -65,6 +71,9 @@ export class PixelGridEffect extends Entity {
 
     this.columns = Math.ceil(width / config.gap);
     this.rows = Math.ceil(height / config.gap);
+    this.inverseGap = 1 / config.gap;
+    const cacheSize = this.columns * this.rows;
+    this.runtime = createPixelGridRuntimeState(cacheSize);
     const resolved = resolvePixelGridConfig(config);
     this.hoverEffects = resolved.hoverEffects;
     this.rippleEffects = resolved.rippleEffects;
@@ -89,8 +98,8 @@ export class PixelGridEffect extends Entity {
       }
     );
 
-    if (config.imageMask?.src) {
-      this.imageMask = new ImageMaskInfluence(
+    const imageMask = config.imageMask?.src
+      ? new ImageMaskInfluence(
         config.imageMask.src,
         config.imageMask.centerX ?? centerX,
         config.imageMask.centerY ?? centerY,
@@ -102,11 +111,11 @@ export class PixelGridEffect extends Entity {
           blurRadius: config.imageMask.blurRadius,
           dithering: config.imageMask.dithering
         }
-      );
-    }
+      )
+      : null;
 
-    if (config.textMask?.text) {
-      this.textMask = new TextMaskInfluence(
+    const textMask = config.textMask?.text
+      ? new TextMaskInfluence(
         config.textMask.text,
         config.textMask.centerX ?? centerX,
         config.textMask.centerY ?? centerY,
@@ -115,19 +124,16 @@ export class PixelGridEffect extends Entity {
           strength: config.textMask.strength ?? 0.9,
           blurRadius: config.textMask.blurRadius ?? 2
         }
-      );
-    }
+      )
+      : null;
 
-    const initialMask = resolved.initialMask;
-    this.morphState = initialMask === "image" ? "image" : "text";
-
-    if (initialMask === "image") {
-      if (this.imageMask) this.influenceManager.add(this.imageMask);
-      else if (this.textMask) this.influenceManager.add(this.textMask);
-    } else {
-      if (this.textMask) this.influenceManager.add(this.textMask);
-      else if (this.imageMask) this.influenceManager.add(this.imageMask);
-    }
+    this.maskState = createMaskStateMachine({
+      influenceManager: this.influenceManager,
+      autoMorph: this.autoMorph,
+      initialMask: resolved.initialMask,
+      imageMask,
+      textMask
+    });
 
     this.setupInfluences();
   }
@@ -149,69 +155,38 @@ export class PixelGridEffect extends Entity {
     }
   }
 
-  private getCellIndex(x: number, y: number): number {
-    return x * this.rows + y;
-  }
+  private updateMaskWeightCache(): void {
+    const imageMask = this.maskState.imageMask;
+    const textMask = this.maskState.textMask;
+    const morphMask = this.maskState.morphMask;
+    const hasImage = imageMask !== null;
+    const hasText = textMask !== null;
+    const hasMorph = morphMask !== null;
 
-  private startMorph(
-    from: MaskInfluence,
-    to: MaskInfluence,
-    nextState: MorphState
-  ): void {
-    this.influenceManager.remove(from);
-    this.influenceManager.remove(to);
-
-    this.morphMask = new MorphMaskInfluence(
-      from,
-      to,
-      this.autoMorph.morphDurationMs
-    );
-
-    this.influenceManager.add(this.morphMask);
-    this.morphState = nextState;
-    this.stateTimer = 0;
-  }
-
-  private updateMorphState(delta: number): void {
-    if (!this.autoMorph.enabled) return;
-    if (!this.imageMask || !this.textMask) return;
-
-    if (this.morphMask && !this.morphMask.isAlive()) {
-      this.influenceManager.remove(this.morphMask);
-      this.morphMask = null;
-
-      if (this.morphState === "toText") {
-        this.influenceManager.add(this.textMask);
-        this.morphState = "text";
-      } else if (this.morphState === "toImage") {
-        this.influenceManager.add(this.imageMask);
-        this.morphState = "image";
-      }
-
-      this.stateTimer = 0;
+    if (!hasImage && !hasText && !hasMorph) {
+      this.runtime.activeMaskWeightCache.fill(0);
+      this.runtime.imageMaskWeightCache.fill(0);
+      this.runtime.textMaskWeightCache.fill(0);
       return;
     }
 
-    if (this.morphMask) return;
+    for (let i = 0; i < this.cells.length; i++) {
+      const cell = this.cells[i];
+      const image = hasImage
+        ? imageMask!.getInfluence(cell.x, cell.y, 1)
+        : 0;
+      const text = hasText
+        ? textMask!.getInfluence(cell.x, cell.y, 1)
+        : 0;
+      const morph = hasMorph
+        ? morphMask!.getInfluence(cell.x, cell.y, 1)
+        : 0;
 
-    this.stateTimer += delta;
+      const textOrMorph = Math.max(text, morph);
 
-    const imageWaitMs = this.autoMorph.holdImageMs + this.autoMorph.intervalMs;
-    const textWaitMs = this.autoMorph.holdTextMs + this.autoMorph.intervalMs;
-
-    if (
-      this.morphState === "image" &&
-      this.stateTimer >= imageWaitMs
-    ) {
-      this.startMorph(this.imageMask, this.textMask, "toText");
-      return;
-    }
-
-    if (
-      this.morphState === "text" &&
-      this.stateTimer >= textWaitMs
-    ) {
-      this.startMorph(this.textMask, this.imageMask, "toImage");
+      this.runtime.imageMaskWeightCache[i] = image;
+      this.runtime.textMaskWeightCache[i] = textOrMorph;
+      this.runtime.activeMaskWeightCache[i] = Math.max(image, textOrMorph);
     }
   }
 
@@ -249,111 +224,12 @@ export class PixelGridEffect extends Entity {
     }
   }
 
-  private isInsideAnyMask(cell: PixelCell): boolean {
-    return this.getMaskWeight(cell) > 0.05;
-  }
-
-  private getHoverWeight(cell: PixelCell): number {
-    const mouse = this.engine.mouse;
-    if (!mouse.inside) return 0;
-
-    const dx = cell.x - mouse.x;
-    const dy = cell.y - mouse.y;
-    const hoverMode = this.hoverEffects.mode;
-
-    if (hoverMode === "reactive") {
-      return computeHoverFalloff(dx, dy, {
-        radiusX: this.hoverEffects.radius,
-        radiusY: this.hoverEffects.radiusY,
-        shape: this.hoverEffects.shape
-      });
-    }
-
-    return computeHoverFalloff(dx, dy, {
-      radiusX: this.hoverEffects.radius,
-      radiusY: this.hoverEffects.radiusY,
-      shape: this.hoverEffects.shape
-    });
-  }
-
-  private getMaskWeight(cell: PixelCell): number {
-    const image = this.imageMask
-      ? this.imageMask.getInfluence(cell.x, cell.y, 1)
-      : 0;
-    const text = this.textMask
-      ? this.textMask.getInfluence(cell.x, cell.y, 1)
-      : 0;
-    const morph = this.morphMask
-      ? this.morphMask.getInfluence(cell.x, cell.y, 1)
-      : 0;
-
-    return Math.max(image, text, morph);
-  }
-
-  private getImageMaskWeight(cell: PixelCell): number {
-    if (!this.imageMask) return 0;
-    return this.imageMask.getInfluence(cell.x, cell.y, 1);
-  }
-
-  private getTextMaskWeight(cell: PixelCell): number {
-    const text = this.textMask
-      ? this.textMask.getInfluence(cell.x, cell.y, 1)
-      : 0;
-    const morph = this.morphMask
-      ? this.morphMask.getInfluence(cell.x, cell.y, 1)
-      : 0;
-    return Math.max(text, morph);
-  }
-
-  private shouldAffectWithReactiveHover(cell: PixelCell): boolean {
-    const scope = this.hoverEffects.interactionScope;
-
-    if (scope === "all") return true;
-    if (scope === "activeOnly") return cell.targetSize > 0.001;
-    return this.isInsideAnyMask(cell);
-  }
-
-  private applyReactiveEffectsToCell(
-    cell: PixelCell,
-    cellIndex: number,
-    interaction: number,
-    originX: number,
-    originY: number,
-    tintPalette: string[],
-    multipliers = { deactivate: 1, displace: 1, jitter: 1 }
-  ): void {
-    const strength = Math.max(0, interaction);
-    if (strength <= 0) return;
-
-    const deactivate = this.hoverEffects.deactivate * multipliers.deactivate;
-    const displace = this.hoverEffects.displace * multipliers.displace;
-    const jitter = this.hoverEffects.jitter * multipliers.jitter;
-
-    if (deactivate > 0) {
-      cell.targetSize *= Math.max(0, 1 - deactivate * strength);
-    }
-
-    if (displace > 0) {
-      const dx = cell.x - originX;
-      const dy = cell.y - originY;
-      const len = Math.sqrt(dx * dx + dy * dy) || 1;
-      const dirX = dx / len;
-      const dirY = dy / len;
-
-      const noise =
-        Math.sin((cellIndex + 1) * 12.9898 + this.reactiveTime * 0.01) * 0.5 + 0.5;
-
-      const jitterTerm = (noise - 0.5) * 2 * jitter * strength;
-
-      cell.offsetX += dirX * displace * strength + jitterTerm;
-      cell.offsetY += dirY * displace * strength - jitterTerm;
-    }
-
-    if (tintPalette.length > 0) {
-      const normalized = Math.max(0, Math.min(0.999, strength));
-      const colorIndex = Math.floor(normalized * tintPalette.length);
-      cell.color = tintPalette[colorIndex];
-    }
+  private shouldAffectWithReactiveHover(index: number, cell: PixelCell): boolean {
+    return shouldAffectCell(
+      this.hoverEffects.interactionScope,
+      cell.targetSize,
+      this.runtime.activeMaskWeightCache[index]
+    );
   }
 
   private applyReactiveHover(): void {
@@ -362,148 +238,68 @@ export class PixelGridEffect extends Entity {
 
     for (let i = 0; i < this.cells.length; i++) {
       const cell = this.cells[i];
-      if (!this.shouldAffectWithReactiveHover(cell)) continue;
+      if (!this.shouldAffectWithReactiveHover(i, cell)) continue;
 
-      const falloff = this.getHoverWeight(cell);
+      const falloff = getHoverWeight(cell, this.engine.mouse, this.hoverEffects);
       if (falloff <= 0) continue;
 
       const mouse = this.engine.mouse;
       const interaction = falloff * this.hoverEffects.strength;
 
-      this.applyReactiveEffectsToCell(
+      applyReactiveEffectsToCell({
         cell,
-        i,
+        cellIndex: i,
         interaction,
-        mouse.x,
-        mouse.y,
-        this.hoverEffects.tintPalette
-      );
+        originX: mouse.x,
+        originY: mouse.y,
+        reactiveTime: this.runtime.reactiveTime,
+        hoverEffects: this.hoverEffects,
+        tintPalette: this.hoverEffects.tintPalette
+      });
     }
   }
 
   private applyReactiveRippleEffects(): void {
     if (!this.influenceOptions.ripple) return;
-    if (!this.rippleEffects.enabled) return;
-    if (this.activeRipples.length === 0) return;
-
-    const palette = this.rippleEffects.tintPalette.length > 0
-      ? this.rippleEffects.tintPalette
-      : this.hoverEffects.tintPalette;
-
-    for (let r = 0; r < this.activeRipples.length; r++) {
-      const ripple = this.activeRipples[r];
-      const bounds = ripple.getBounds();
-
-      const minCol = Math.max(0, Math.floor(bounds.minX / this.config.gap));
-      const maxCol = Math.min(this.columns - 1, Math.floor(bounds.maxX / this.config.gap));
-      const minRow = Math.max(0, Math.floor(bounds.minY / this.config.gap));
-      const maxRow = Math.min(this.rows - 1, Math.floor(bounds.maxY / this.config.gap));
-
-      for (let x = minCol; x <= maxCol; x++) {
-        for (let y = minRow; y <= maxRow; y++) {
-          const index = this.getCellIndex(x, y);
-          const cell = this.cells[index];
-
-          if (!this.shouldAffectWithReactiveHover(cell)) continue;
-
-          const factor = ripple.getRingFactorAt(cell.x, cell.y);
-          if (factor <= 0) continue;
-
-          const interaction = factor * this.hoverEffects.strength;
-
-          this.applyReactiveEffectsToCell(
-            cell,
-            index,
-            interaction,
-            ripple.getOriginX(),
-            ripple.getOriginY(),
-            palette,
-            {
-              deactivate: this.rippleEffects.deactivateMultiplier,
-              displace: this.rippleEffects.displaceMultiplier,
-              jitter: this.rippleEffects.jitterMultiplier
-            }
-          );
-        }
-      }
-    }
+    applyReactiveRipple({
+      cells: this.cells,
+      activeRipples: this.runtime.activeRipples,
+      inverseGap: this.inverseGap,
+      columns: this.columns,
+      rows: this.rows,
+      hoverEffects: this.hoverEffects,
+      rippleEffects: this.rippleEffects,
+      activeMaskWeightCache: this.runtime.activeMaskWeightCache,
+      reactiveTime: this.runtime.reactiveTime,
+      getCellIndex: this.getCellIndexRef
+    });
   }
 
   private applyBreathing(): void {
-    if (!this.breathing.enabled) return;
-
-    const minOpacity = clamp(this.breathing.minOpacity, 0, 1);
-    const maxOpacity = clamp(this.breathing.maxOpacity, minOpacity, 1);
-    const speed = Math.max(0, this.breathing.speed);
-    const strength = clamp(this.breathing.strength, 0, 1);
-
-    for (let i = 0; i < this.cells.length; i++) {
-      const cell = this.cells[i];
-      if (cell.targetSize <= 0.001) continue;
-
-      let influenceWeight = 0;
-
-      if (this.breathing.affectHover) {
-        const mouse = this.engine.mouse;
-        if (mouse.inside) {
-          const dx = cell.x - mouse.x;
-          const dy = cell.y - mouse.y;
-
-          const hoverWeight = computeHoverFalloff(dx, dy, {
-            radiusX: this.breathing.radius,
-            radiusY: this.breathing.radiusY,
-            shape: this.breathing.shape
-          });
-
-          influenceWeight = Math.max(influenceWeight, hoverWeight);
-        }
-      }
-
-      if (this.breathing.affectImage) {
-        influenceWeight = Math.max(
-          influenceWeight,
-          this.getImageMaskWeight(cell)
-        );
-      }
-
-      if (this.breathing.affectText) {
-        influenceWeight = Math.max(
-          influenceWeight,
-          this.getTextMaskWeight(cell)
-        );
-      }
-
-      if (influenceWeight <= 0.001) continue;
-
-      const breathWave = cell.getBreathFactor(this.reactiveTime, speed);
-      const randomSlice = Math.floor(this.reactiveTime * 0.001 * speed * 2);
-      const seed = Math.sin((i + 1) * 12.9898 + randomSlice * 78.233) * 43758.5453;
-      const randomPulse = seed - Math.floor(seed);
-      const wave = clamp((breathWave * 0.65) + (randomPulse * 0.35), 0, 1);
-      const breathOpacity =
-        minOpacity + (maxOpacity - minOpacity) * wave;
-      const mix = clamp(influenceWeight * strength, 0, 1);
-
-      cell.opacity = 1 + (breathOpacity - 1) * mix;
-    }
+    applyBreathingSystem({
+      cells: this.cells,
+      breathing: this.breathing,
+      mouse: this.engine.mouse,
+      imageMaskWeightCache: this.runtime.imageMaskWeightCache,
+      textMaskWeightCache: this.runtime.textMaskWeightCache,
+      reactiveTime: this.runtime.reactiveTime
+    });
   }
 
   update(delta: number): void {
-    this.reactiveTime += delta;
+    this.runtime.reactiveTime += delta;
 
-    for (let i = 0; i < this.cells.length; i++) {
-      this.cells[i].targetSize = 0;
-      this.cells[i].resetVisualState();
-    }
+    resetCells(this.cells);
 
     this.influenceManager.update(delta);
-    this.activeRipples = this.activeRipples.filter(r => r.isAlive());
-    this.updateMorphState(delta);
+    compactAliveRipples(this.runtime.activeRipples);
+    this.maskState.update(delta);
 
     this.influenceManager.apply(
       this.cells,
-      this.getCellIndex.bind(this)
+      this.getCellIndexRef
     );
+    this.updateMaskWeightCache();
 
     this.applyReactiveHover();
     this.applyReactiveRippleEffects();
@@ -554,8 +350,8 @@ export class PixelGridEffect extends Entity {
     const maxRadius =
       Math.max(this.width, this.height) * 1.2;
 
-    if (this.activeRipples.length >= this.maxRipples) {
-      const oldest = this.activeRipples.shift();
+    if (this.runtime.activeRipples.length >= this.maxRipples) {
+      const oldest = this.runtime.activeRipples.shift();
       if (oldest) this.influenceManager.remove(oldest);
     }
 
@@ -568,7 +364,7 @@ export class PixelGridEffect extends Entity {
       maxRadius
     );
 
-    this.activeRipples.push(ripple);
+    this.runtime.activeRipples.push(ripple);
     this.influenceManager.add(ripple);
   }
 }

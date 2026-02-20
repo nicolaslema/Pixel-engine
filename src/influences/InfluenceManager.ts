@@ -45,7 +45,9 @@ export class InfluenceManager {
   }
 
   remove(influence: Influence): void {
-    this.influences = this.influences.filter(i => i !== influence);
+    const index = this.influences.indexOf(influence);
+    if (index === -1) return;
+    this.influences.splice(index, 1);
     this.dirty = true;
   }
 
@@ -55,10 +57,18 @@ export class InfluenceManager {
   }
 
   removeDead(): void {
+    let write = 0;
     const before = this.influences.length;
-    this.influences = this.influences.filter(i => i.isAlive());
 
-    if (before !== this.influences.length) {
+    for (let read = 0; read < before; read++) {
+      const influence = this.influences[read];
+      if (influence.isAlive()) {
+        this.influences[write++] = influence;
+      }
+    }
+
+    if (write !== before) {
+      this.influences.length = write;
       this.dirty = true;
     }
   }

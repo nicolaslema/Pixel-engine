@@ -23,7 +23,7 @@ const effect = new PixelGridEffect(
     breathSpeed: 0.9,
 
     hoverEffects: {
-      mode: "classic",
+      mode: "reactive",
       radius: 100,
       radiusY: 100,
       shape: "circle",
@@ -66,7 +66,7 @@ const effect = new PixelGridEffect(
       morphDurationMs: 100,
       intervalMs: 1050
     },
-    initialMask: "text",
+    initialMask: "image",
     imageMask: {
       src: "/src/assets/cat.png",
       centerX: 400,

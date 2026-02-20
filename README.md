@@ -104,6 +104,7 @@ Use bundled asset URLs (`import img from "./asset.png"`). Do not use `"/src/..."
 - `renderers`: abstraction + Canvas2D implementation
 - `influences`: reusable influence primitives
 - `entities`: high-level effects (`PixelGridEffect`)
+- `entities/pixel-grid/internal`: private runtime modules (not part of public API)
 
 ## Scripts
 
