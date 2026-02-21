@@ -131,12 +131,16 @@ Use bundled asset URLs (`import img from "./asset.png"`). Do not use `"/src/..."
 - `npm run dev`: runs playground with Vite.
 - `npm run test`: runs Vitest.
 - `npm run build`: builds distributable library with `tsup` (ESM/CJS/types).
+- `npm run typecheck`: TypeScript validation (`tsc --noEmit`).
 - `npm run build:packages`: builds `@pixel-engine/core` and `@pixel-engine/effects`.
 - `npm run build:all`: builds aggregate + split packages.
+- `npm run verify`: test + build + typecheck.
+- `npm run release:check`: verify + npm pack dry-runs.
 - `npm run build:playground`: builds playground app with Vite.
 - API reference and examples: `API.md`
 - Release notes: `CHANGELOG.md`
 - Migration guide: `MIGRATION.md`
+- Release workflow: `RELEASE.md`
 
 ## Package Split
 

@@ -3,6 +3,25 @@
   "version": "1.0.0",
   "description": "Core runtime package for Pixel Engine.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TuNombre/pixel-engine.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/TuNombre/pixel-engine/issues"
+  },
+  "homepage": "https://github.com/TuNombre/pixel-engine/tree/main/packages/core",
+  "keywords": [
+    "pixel-engine",
+    "canvas",
+    "runtime",
+    "2d",
+    "core"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -17,7 +36,13 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "tsup"
+    "build": "tsup",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "verify": "npm run build && npm run typecheck",
+    "prepublishOnly": "npm run verify"
   }
 }

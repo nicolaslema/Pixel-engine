@@ -5,6 +5,25 @@
   "author": "TuNombre",
   "license": "MIT",
   "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TuNombre/pixel-engine.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TuNombre/pixel-engine/issues"
+  },
+  "homepage": "https://github.com/TuNombre/pixel-engine#readme",
+  "keywords": [
+    "pixel",
+    "canvas",
+    "engine",
+    "effects",
+    "animation",
+    "reactive"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "workspaces": [
     "packages/*"
   ],
@@ -25,11 +44,16 @@
   "scripts": {
     "dev": "vite",
     "build": "tsup",
+    "typecheck": "tsc --noEmit",
     "build:packages": "npm run build -w @pixel-engine/core && npm run build -w @pixel-engine/effects",
     "build:all": "npm run build && npm run build:packages",
+    "verify": "npm run test && npm run build:all && npm run typecheck",
+    "pack:dry": "npm pack --dry-run && npm pack --dry-run -w @pixel-engine/core && npm pack --dry-run -w @pixel-engine/effects",
+    "release:check": "npm run verify && npm run pack:dry",
     "build:playground": "vite build",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "prepublishOnly": "npm run release:check"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

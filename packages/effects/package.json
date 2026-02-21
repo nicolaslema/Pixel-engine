@@ -3,6 +3,25 @@
   "version": "1.0.0",
   "description": "Effects package for Pixel Engine (PixelGrid and influences).",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TuNombre/pixel-engine.git",
+    "directory": "packages/effects"
+  },
+  "bugs": {
+    "url": "https://github.com/TuNombre/pixel-engine/issues"
+  },
+  "homepage": "https://github.com/TuNombre/pixel-engine/tree/main/packages/effects",
+  "keywords": [
+    "pixel-engine",
+    "canvas",
+    "effects",
+    "pixel-grid",
+    "animation"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -20,7 +39,13 @@
   "dependencies": {
     "@pixel-engine/core": "workspace:*"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "tsup"
+    "build": "tsup",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "verify": "npm run build && npm run typecheck",
+    "prepublishOnly": "npm run verify"
   }
 }
