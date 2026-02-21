@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.0.7] - 2026-02-21
+
+### Added
+- Documentation examples expanded for React integration:
+  - `PixelCanvas`
+  - `PixelGridCanvas`
+  - `PixelSurface`
+- External React consumer validation documented (Vite + TypeScript, local package install, positive result).
+
+### Changed
+- `PixelCard` and `PixelSurface` overlay behavior:
+  - default `overlayPointerEvents` is now `none` to avoid blocking hover/ripple interactions on canvas.
+  - can be overridden with `overlayPointerEvents=\"auto\"` when overlay UI must be interactive.
+
 ## [1.0.6] - 2026-02-21
 
 ### Added

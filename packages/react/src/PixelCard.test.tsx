@@ -101,4 +101,43 @@ describe("PixelCard", () => {
 
     cleanupHost(container, root);
   });
+
+  it("uses overlayPointerEvents none by default and allows override", () => {
+    (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    const createEngine = vi.fn(() => ({
+      start: vi.fn(),
+      destroy: vi.fn(),
+      resize: vi.fn()
+    })) as never;
+
+    const { container, root } = createHost();
+    act(() => {
+      root.render(
+        <PixelCard width={320} height={180} createEngine={createEngine}>
+          <span>Overlay text</span>
+        </PixelCard>
+      );
+    });
+
+    const overlay = container.querySelectorAll("div")[1];
+    expect(overlay.style.pointerEvents).toBe("none");
+
+    act(() => {
+      root.render(
+        <PixelCard
+          width={320}
+          height={180}
+          createEngine={createEngine}
+          overlayPointerEvents="auto"
+        >
+          <span>Overlay text</span>
+        </PixelCard>
+      );
+    });
+
+    const updatedOverlay = container.querySelectorAll("div")[1];
+    expect(updatedOverlay.style.pointerEvents).toBe("auto");
+
+    cleanupHost(container, root);
+  });
 });

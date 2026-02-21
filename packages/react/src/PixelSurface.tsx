@@ -7,6 +7,7 @@ export interface PixelSurfaceProps extends PixelCanvasProps, PropsWithChildren {
   containerStyle?: CSSProperties;
   overlayClassName?: string;
   overlayStyle?: CSSProperties;
+  overlayPointerEvents?: CSSProperties["pointerEvents"];
 }
 
 const surfaceStyle: CSSProperties = {
@@ -32,13 +33,20 @@ export function PixelSurface({
   containerStyle,
   overlayClassName,
   overlayStyle,
+  overlayPointerEvents = "none",
   style,
   ...canvasProps
 }: PixelSurfaceProps) {
+  const mergedOverlayStyle: CSSProperties = {
+    ...overlayStyleBase,
+    pointerEvents: overlayPointerEvents,
+    ...overlayStyle
+  };
+
   return (
     <div className={containerClassName} style={{ ...surfaceStyle, ...containerStyle }}>
       <PixelCanvas {...canvasProps} style={{ ...canvasStyle, ...style }} />
-      <div className={overlayClassName} style={{ ...overlayStyleBase, ...overlayStyle }}>
+      <div className={overlayClassName} style={mergedOverlayStyle}>
         {children}
       </div>
     </div>

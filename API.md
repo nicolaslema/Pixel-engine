@@ -337,6 +337,8 @@ Hardening options:
 - `effectKey?: string | number` in `usePixelGridEffect` / `PixelGridCanvas`
   - effect is recreated only when `effectKey` changes
   - avoids accidental remounts from inline config object identity changes
+- `overlayPointerEvents?: "none" | "auto"` in `PixelCard` / `PixelSurface`
+  - default is `none` so overlay text does not block canvas hover/ripple
 
 Minimal `PixelCanvas` usage:
 
@@ -399,6 +401,88 @@ export function HeroCard() {
   );
 }
 ```
+
+## React Examples by Component
+
+`PixelCanvas`:
+
+```tsx
+import { useCallback } from "react";
+import { PixelEngine } from "@pixel-engine/core";
+import { PixelGridEffect } from "@pixel-engine/effects";
+import { PixelCanvas } from "@pixel-engine/react";
+
+export function CanvasOnly() {
+  const onReady = useCallback((engine: PixelEngine) => {
+    const grid = new PixelGridEffect(engine, 900, 520, {
+      colors: ["#334155", "#475569", "#64748b"],
+      gap: 7,
+      expandEase: 0.08,
+      breathSpeed: 1
+    });
+    engine.addEntity(grid);
+  }, []);
+
+  return <PixelCanvas width={900} height={520} onReady={onReady} />;
+}
+```
+
+`PixelGridCanvas`:
+
+```tsx
+import { PixelGridCanvas } from "@pixel-engine/react";
+
+export function GridCanvas() {
+  return (
+    <PixelGridCanvas
+      width={900}
+      height={520}
+      onHoverStart={(e) => console.log("hover start", e.x, e.y)}
+      onHoverEnd={(e) => console.log("hover end", e.x, e.y)}
+      onRipple={(e) => console.log("ripple", e.x, e.y)}
+      gridConfig={{
+        colors: ["#0f172a", "#1e293b", "#334155"],
+        gap: 7,
+        expandEase: 0.08,
+        breathSpeed: 1
+      }}
+    />
+  );
+}
+```
+
+`PixelSurface`:
+
+```tsx
+import { useCallback } from "react";
+import { PixelEngine } from "@pixel-engine/core";
+import { PixelGridEffect } from "@pixel-engine/effects";
+import { PixelSurface } from "@pixel-engine/react";
+
+export function SurfaceWithOverlay() {
+  const onReady = useCallback((engine: PixelEngine) => {
+    const grid = new PixelGridEffect(engine, 900, 520, {
+      colors: ["#1e293b", "#334155", "#475569"],
+      gap: 8,
+      expandEase: 0.08,
+      breathSpeed: 1
+    });
+    engine.addEntity(grid);
+  }, []);
+
+  return (
+    <PixelSurface width={900} height={520} onReady={onReady} overlayPointerEvents="none">
+      <h2>Overlay Content</h2>
+      <p>Hover y click siguen funcionando en el canvas.</p>
+    </PixelSurface>
+  );
+}
+```
+
+## External React Validation
+
+- Integracion validada en un proyecto React externo (Vite + TypeScript) usando instalacion local de paquetes.
+- Resultado: positivo para `PixelCanvas`, `PixelGridCanvas`, `PixelSurface` y `PixelCard`.
 
 ## Vue Wrapper Pattern
 

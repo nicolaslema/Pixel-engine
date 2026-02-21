@@ -8,6 +8,7 @@ interface PixelCardBaseProps extends PropsWithChildren {
   containerStyle?: CSSProperties;
   overlayClassName?: string;
   overlayStyle?: CSSProperties;
+  overlayPointerEvents?: CSSProperties["pointerEvents"];
   radius?: number;
   padding?: number;
 }
@@ -39,6 +40,7 @@ export function PixelCard({
   containerStyle,
   overlayClassName,
   overlayStyle,
+  overlayPointerEvents = "none",
   ...canvasProps
 }: PixelCardProps) {
   const isGridCard =
@@ -54,6 +56,7 @@ export function PixelCard({
   const mergedOverlayStyle: CSSProperties = {
     position: "relative",
     zIndex: 1,
+    pointerEvents: overlayPointerEvents,
     borderRadius: radius,
     padding,
     ...overlayStyle
