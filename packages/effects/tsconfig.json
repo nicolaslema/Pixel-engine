@@ -1,7 +1,11 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "dist"
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "@pixel-engine/core": ["../core/src/index.ts"]
+    }
   },
   "include": ["src"]
 }

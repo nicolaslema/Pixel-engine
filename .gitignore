@@ -1,3 +1,7 @@
 node_modules
 dist
 .DS_Store
+
+# Local planning docs (keep in workspace, do not publish to GitHub)
+ROADMAP_INTEGRADO.md
+docs/roadmap/

@@ -22,7 +22,7 @@ const effect = new PixelGridEffect(
     gap: 5,
     expandEase: 0.08,
     breathSpeed: 0.9,
-    canvasBackground: "#00ffb7",
+    canvasBackground: "#141514",
     
 
     hoverEffects: {
@@ -117,8 +117,8 @@ document.body.style.backgroundColor = backgroundControls.pageColor;
 
 const panel = document.createElement("div");
 panel.style.position = "fixed";
-panel.style.top = "12px";
-panel.style.left = "12px";
+panel.style.top = "600px";
+panel.style.left = "0px";
 panel.style.zIndex = "9999";
 panel.style.padding = "10px";
 panel.style.borderRadius = "8px";
