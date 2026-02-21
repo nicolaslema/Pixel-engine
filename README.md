@@ -66,7 +66,8 @@ grid.setCanvasBackground(null);
 
 ```tsx
 import { useEffect, useRef } from "react";
-import { PixelEngine, PixelGridEffect } from "pixel-engine";
+import { PixelEngine } from "@pixel-engine/core";
+import { PixelGridEffect } from "@pixel-engine/effects";
 import catPngUrl from "./assets/cat.png";
 
 export function PixelBackground() {
@@ -112,6 +113,12 @@ export function PixelBackground() {
 
   return <canvas ref={canvasRef} />;
 }
+```
+
+Compatibility aggregate import remains available:
+
+```ts
+import { PixelEngine, PixelGridEffect } from "pixel-engine";
 ```
 
 Use bundled asset URLs (`import img from "./asset.png"`). Do not use `"/src/..."` paths in app projects.
