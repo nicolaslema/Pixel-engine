@@ -4,7 +4,7 @@ This document defines the publish order and release checks for the Pixel Engine 
 
 ## 0. Prerequisites
 
-- Update placeholder repository metadata if needed:
+- Confirm repository metadata is correct:
 - root `package.json`
 - `packages/core/package.json`
 - `packages/effects/package.json`

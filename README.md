@@ -13,6 +13,7 @@ High-performance 2D pixel simulation engine for browser apps and UI frameworks.
 ## Status
 
 Stable API baseline (v1) for core + `PixelGridEffect`.
+Phase A (publish architecture hardening) completed.
 
 ## Install
 
@@ -135,7 +136,8 @@ Use bundled asset URLs (`import img from "./asset.png"`). Do not use `"/src/..."
 - `npm run build:packages`: builds `@pixel-engine/core` and `@pixel-engine/effects`.
 - `npm run build:all`: builds aggregate + split packages.
 - `npm run verify`: test + build + typecheck.
-- `npm run release:check`: verify + npm pack dry-runs.
+- `npm run smoke:consumer`: validates package consumption from local tarballs.
+- `npm run release:check`: verify + pack dry-runs + consumer smoke test.
 - `npm run build:playground`: builds playground app with Vite.
 - API reference and examples: `API.md`
 - Release notes: `CHANGELOG.md`

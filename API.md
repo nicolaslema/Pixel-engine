@@ -199,6 +199,8 @@ const grid = new PixelGridEffect(engine, 1000, 700, {
 ## Example: Custom Image/Text + Morph Interval
 
 ```ts
+import catPngUrl from "./assets/cat.png";
+
 const grid = new PixelGridEffect(engine, 1000, 700, {
   colors: ["#334155", "#475569", "#64748b"],
   gap: 7,
@@ -211,7 +213,7 @@ const grid = new PixelGridEffect(engine, 1000, 700, {
   },
   initialMask: "image",
   imageMask: {
-    src: "/src/assets/cat.png",
+    src: catPngUrl,
     centerX: 500,
     centerY: 320,
     scale: 3,

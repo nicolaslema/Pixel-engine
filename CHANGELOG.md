@@ -2,6 +2,26 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.0.2] - 2026-02-21
+
+### Added
+- External consumer smoke test script (`scripts/smoke-consumer.mjs`) that:
+  - packs local tarballs
+  - installs them in a temporary app
+  - validates real imports for `pixel-engine`, `@pixel-engine/core`, and `@pixel-engine/effects`
+- Release workflow documentation in `RELEASE.md`.
+
+### Changed
+- Completed Phase A package decoupling:
+  - `packages/core` and `packages/effects` now export from local package sources (no root `src` re-exports).
+  - `@pixel-engine/effects` imports runtime contracts from `@pixel-engine/core`.
+- Publish metadata hardened in root/core/effects package manifests.
+- `release:check` now runs:
+  - verify (test + build + typecheck)
+  - pack dry-runs
+  - external consumer smoke test
+- `@pixel-engine/effects` dependency on `@pixel-engine/core` switched from workspace protocol to semver (`^1.0.0`) for publish-safe installs.
+
 ## [1.0.1] - 2026-02-20
 
 ### Added

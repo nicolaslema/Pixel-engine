@@ -2,17 +2,17 @@
   "name": "pixel-engine",
   "version": "1.0.0",
   "description": "A high-performance typed-array based pixel simulation engine.",
-  "author": "TuNombre",
+  "author": "nicolaslema",
   "license": "MIT",
   "private": false,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/TuNombre/pixel-engine.git"
+    "url": "git+https://github.com/nicolaslema/pixel-engine.git"
   },
   "bugs": {
-    "url": "https://github.com/TuNombre/pixel-engine/issues"
+    "url": "https://github.com/nicolaslema/pixel-engine/issues"
   },
-  "homepage": "https://github.com/TuNombre/pixel-engine#readme",
+  "homepage": "https://github.com/nicolaslema/pixel-engine#readme",
   "keywords": [
     "pixel",
     "canvas",

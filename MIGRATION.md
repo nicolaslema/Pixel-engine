@@ -2,6 +2,27 @@
 
 This guide covers migration to the formal v1 stable baseline and the new package split.
 
+## Update: Publish Hardening + Consumer Smoke Test (v1.0.2)
+
+- Package boundaries are now physically decoupled in `packages/core` and `packages/effects`.
+- `@pixel-engine/effects` now depends on `@pixel-engine/core` with semver (`^1.0.0`) for publish-safe npm installs.
+- New release validation flow:
+
+```bash
+npm run release:check
+```
+
+This now includes:
+- tests
+- build + package builds
+- typecheck
+- pack dry-runs
+- consumer smoke install/import test from local tarballs
+
+Maintainer note:
+- Run `npm run release:check` before every public publish.
+- Follow publish order in `RELEASE.md` (`core` -> `effects` -> aggregate).
+
 ## Update: Canvas Background via PixelGridEffect (v1.0.1)
 
 Canvas clear color can now be controlled directly from `PixelGridEffect`:

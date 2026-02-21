@@ -5,13 +5,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/TuNombre/pixel-engine.git",
+    "url": "git+https://github.com/nicolaslema/pixel-engine.git",
     "directory": "packages/effects"
   },
   "bugs": {
-    "url": "https://github.com/TuNombre/pixel-engine/issues"
+    "url": "https://github.com/nicolaslema/pixel-engine/issues"
   },
-  "homepage": "https://github.com/TuNombre/pixel-engine/tree/main/packages/effects",
+  "homepage": "https://github.com/nicolaslema/pixel-engine/tree/main/packages/effects",
   "keywords": [
     "pixel-engine",
     "canvas",
