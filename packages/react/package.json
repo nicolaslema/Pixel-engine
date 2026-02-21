@@ -1,0 +1,54 @@
+{
+  "name": "@pixel-engine/react",
+  "version": "1.0.0",
+  "description": "React integration layer for Pixel Engine.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicolaslema/pixel-engine.git",
+    "directory": "packages/react"
+  },
+  "bugs": {
+    "url": "https://github.com/nicolaslema/pixel-engine/issues"
+  },
+  "homepage": "https://github.com/nicolaslema/pixel-engine/tree/main/packages/react",
+  "keywords": [
+    "pixel-engine",
+    "react",
+    "canvas",
+    "effects",
+    "pixel-grid"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "@pixel-engine/core": "^1.0.0",
+    "@pixel-engine/effects": "^1.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "verify": "npm run build && npm run typecheck",
+    "prepublishOnly": "npm run verify"
+  }
+}

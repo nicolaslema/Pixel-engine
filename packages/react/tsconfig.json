@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@pixel-engine/core": ["../core/src/index.ts"],
+      "@pixel-engine/effects": ["../effects/src/index.ts"]
+    }
+  },
+  "include": ["src"]
+}

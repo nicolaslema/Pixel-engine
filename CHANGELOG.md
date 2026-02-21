@@ -2,6 +2,55 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.0.6] - 2026-02-21
+
+### Added
+- Completed PR-D3 for Phase D React product layer.
+- `PixelCard` now supports declarative grid mode through `gridConfig` (5-15 line integration path).
+- React DX hardening for declarative grid:
+  - new `effectKey` option in `usePixelGridEffect` / `PixelGridCanvas`.
+- New tests for:
+  - `PixelCard` engine/grid modes
+  - `usePixelGridEffect` recreation behavior controlled by `effectKey`
+
+### Changed
+- React docs/examples updated with final Phase D copy-paste usage (`PixelCard`, `PixelGridCanvas`, callbacks).
+- Local roadmap/issue tracking updated to mark Phase D completed.
+
+## [1.0.5] - 2026-02-21
+
+### Added
+- Completed PR-D2 for Phase D React product layer.
+- New declarative React integration:
+  - `usePixelGridEffect`
+  - `PixelGridCanvas`
+- New high-level callbacks in React layer:
+  - `onHoverStart`
+  - `onHoverEnd`
+  - `onRipple`
+- Initial React tests for declarative grid integration and interaction callbacks.
+
+### Changed
+- React docs and migration guidance updated to include PR-D2 APIs.
+- Roadmap and local issue templates synchronized to mark PR-D2 completed and PR-D3 as next step.
+
+## [1.0.4] - 2026-02-21
+
+### Added
+- Started Phase D (React product layer) with PR-D1.
+- New workspace package `@pixel-engine/react` with:
+  - `usePixelEngine` SSR-safe lifecycle hook (init, resize, cleanup).
+  - `PixelCanvas`, `PixelSurface`, and `PixelCard` components.
+  - Initial React unit tests for hook/components.
+
+### Changed
+- Root workspace scripts now include React package build/pack:
+  - `build:packages` includes `@pixel-engine/react`
+  - `pack:dry` includes `@pixel-engine/react`
+- Release workflow updated to publish in order:
+  - `@pixel-engine/core` -> `@pixel-engine/effects` -> `@pixel-engine/react` -> `pixel-engine`.
+- Roadmap and phase issue tracking updated to mark PR-D1 as completed and Phase D as in progress.
+
 ## [1.0.3] - 2026-02-21
 
 ### Changed

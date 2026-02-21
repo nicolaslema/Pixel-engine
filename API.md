@@ -1,6 +1,7 @@
 # Pixel Engine API
 
 This document describes the stable v1 API baseline for `PixelGridEffect`.
+It also includes the current React integration baseline (`@pixel-engine/react`, Phase D PR-D3).
 
 ## Stable Surface
 
@@ -264,7 +265,7 @@ grid.setCanvasBackground(null);
 
 `canvasBackground` in config is applied at effect construction time.
 
-## React Wrapper Pattern
+## React Manual Wrapper Pattern
 
 ```tsx
 import { useEffect, useRef } from "react";
@@ -309,6 +310,95 @@ export function PixelGridCanvas() {
 ```
 
 Note: in React/Vite/Next projects, prefer `import imageUrl from "./file.png"` and pass that URL. Avoid `"/src/..."`
+
+## React Package Baseline (`@pixel-engine/react`)
+
+Install:
+
+```bash
+npm install @pixel-engine/react @pixel-engine/core @pixel-engine/effects
+```
+
+Exports available in PR-D3:
+- `usePixelEngine(options)`
+- `usePixelGridEffect(options)`
+- `PixelCanvas`
+- `PixelGridCanvas`
+- `PixelSurface`
+- `PixelCard`
+
+Interaction callbacks:
+- `onReady(engine)`
+- `onHoverStart({ x, y, nativeEvent })`
+- `onHoverEnd({ x, y, nativeEvent })`
+- `onRipple({ x, y, nativeEvent })` (with `usePixelGridEffect` / `PixelGridCanvas`)
+
+Hardening options:
+- `effectKey?: string | number` in `usePixelGridEffect` / `PixelGridCanvas`
+  - effect is recreated only when `effectKey` changes
+  - avoids accidental remounts from inline config object identity changes
+
+Minimal `PixelCanvas` usage:
+
+```tsx
+import { useCallback } from "react";
+import { PixelEngine } from "@pixel-engine/core";
+import { PixelGridEffect } from "@pixel-engine/effects";
+import { PixelCanvas } from "@pixel-engine/react";
+
+export function App() {
+  const onReady = useCallback((engine: PixelEngine) => {
+    const effect = new PixelGridEffect(engine, 800, 500, {
+      colors: ["#334155", "#475569", "#64748b"],
+      gap: 6,
+      expandEase: 0.08,
+      breathSpeed: 0.9
+    });
+    engine.addEntity(effect);
+  }, []);
+
+  return <PixelCanvas width={800} height={500} onReady={onReady} />;
+}
+```
+
+Declarative `PixelGridCanvas` usage:
+
+```tsx
+import { PixelGridCanvas } from "@pixel-engine/react";
+
+export function App() {
+  return (
+    <PixelGridCanvas
+      width={800}
+      height={500}
+      onHoverStart={(event) => console.log("hover start", event.x, event.y)}
+      onHoverEnd={(event) => console.log("hover end", event.x, event.y)}
+      onRipple={(event) => console.log("ripple", event.x, event.y)}
+      rippleTrigger="click"
+      gridConfig={{
+        colors: ["#334155", "#475569", "#64748b"],
+        gap: 6,
+        expandEase: 0.08,
+        breathSpeed: 0.9
+      }}
+    />
+  );
+}
+```
+
+Minimal `PixelCard` (5-15 lines):
+
+```tsx
+import { PixelCard } from "@pixel-engine/react";
+
+export function HeroCard() {
+  return (
+    <PixelCard width={420} height={240} gridConfig={{ colors: ["#0f172a", "#1e293b"], gap: 7, expandEase: 0.08, breathSpeed: 1 }}>
+      <h3>Pixel Card</h3>
+    </PixelCard>
+  );
+}
+```
 
 ## Vue Wrapper Pattern
 

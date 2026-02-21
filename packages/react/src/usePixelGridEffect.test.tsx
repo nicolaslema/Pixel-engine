@@ -1,0 +1,150 @@
+import React from "react";
+import { describe, expect, it, vi } from "vitest";
+import { createRoot, Root } from "react-dom/client";
+import { act } from "react";
+import { usePixelGridEffect } from "./usePixelGridEffect";
+
+function createHost(): { container: HTMLDivElement; root: Root } {
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  const root = createRoot(container);
+  return { container, root };
+}
+
+function cleanupHost(container: HTMLDivElement, root: Root): void {
+  act(() => root.unmount());
+  container.remove();
+}
+
+describe("usePixelGridEffect", () => {
+  it("creates, attaches and detaches effect with callbacks", () => {
+    (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
+    const addEntity = vi.fn();
+    const removeEntity = vi.fn();
+    const start = vi.fn();
+    const destroy = vi.fn();
+    const resize = vi.fn();
+    const engine = {
+      addEntity,
+      removeEntity,
+      start,
+      destroy,
+      resize
+    };
+
+    const triggerRipple = vi.fn();
+    const effect = { triggerRipple };
+
+    const createEngine = vi.fn(() => engine);
+    const createGridEffect = vi.fn(() => effect);
+    const onGridReady = vi.fn();
+    const onRipple = vi.fn();
+
+    function TestComponent() {
+      const { canvasRef } = usePixelGridEffect({
+        width: 300,
+        height: 180,
+        gridConfig: {
+          colors: ["#334155", "#475569", "#64748b"],
+          gap: 6,
+          expandEase: 0.08,
+          breathSpeed: 1
+        },
+        createEngine: createEngine as never,
+        createGridEffect: createGridEffect as never,
+        onGridReady,
+        onRipple
+      });
+      return <canvas ref={canvasRef} />;
+    }
+
+    const { container, root } = createHost();
+    act(() => {
+      root.render(<TestComponent />);
+    });
+
+    expect(createEngine).toHaveBeenCalledTimes(1);
+    expect(createGridEffect).toHaveBeenCalledTimes(1);
+    expect(addEntity).toHaveBeenCalledTimes(1);
+    expect(onGridReady).toHaveBeenCalledTimes(1);
+
+    const canvas = container.querySelector("canvas");
+    vi.spyOn(canvas as HTMLCanvasElement, "getBoundingClientRect").mockReturnValue({
+      left: 5,
+      top: 7,
+      width: 300,
+      height: 180,
+      right: 305,
+      bottom: 187,
+      x: 5,
+      y: 7,
+      toJSON: () => ({})
+    } as DOMRect);
+
+    act(() => {
+      canvas?.dispatchEvent(new MouseEvent("click", { clientX: 15, clientY: 17 }));
+    });
+
+    expect(triggerRipple).toHaveBeenCalledWith(10, 10);
+    expect(onRipple).toHaveBeenCalledWith(expect.objectContaining({ x: 10, y: 10 }));
+
+    cleanupHost(container, root);
+    expect(removeEntity).toHaveBeenCalledTimes(1);
+    expect(destroy).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not recreate effect on inline config object changes unless effectKey changes", () => {
+    (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
+    const addEntity = vi.fn();
+    const removeEntity = vi.fn();
+    const engine = {
+      addEntity,
+      removeEntity,
+      start: vi.fn(),
+      destroy: vi.fn(),
+      resize: vi.fn()
+    };
+
+    const createEngine = vi.fn(() => engine);
+    const createGridEffect = vi.fn(() => ({
+      triggerRipple: vi.fn()
+    }));
+
+    function TestComponent(props: { effectKey?: string; gap: number }) {
+      const { canvasRef } = usePixelGridEffect({
+        width: 300,
+        height: 180,
+        effectKey: props.effectKey,
+        gridConfig: {
+          colors: ["#334155", "#475569", "#64748b"],
+          gap: props.gap,
+          expandEase: 0.08,
+          breathSpeed: 1
+        },
+        createEngine: createEngine as never,
+        createGridEffect: createGridEffect as never
+      });
+      return <canvas ref={canvasRef} />;
+    }
+
+    const { container, root } = createHost();
+    act(() => {
+      root.render(<TestComponent effectKey="stable" gap={6} />);
+    });
+    expect(createGridEffect).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      root.render(<TestComponent effectKey="stable" gap={8} />);
+    });
+    expect(createGridEffect).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      root.render(<TestComponent effectKey="changed" gap={8} />);
+    });
+    expect(createGridEffect).toHaveBeenCalledTimes(2);
+
+    cleanupHost(container, root);
+  });
+});

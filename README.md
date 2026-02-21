@@ -16,13 +16,14 @@ Stable API baseline (v1) for core + `PixelGridEffect`.
 Phase A (publish architecture hardening) completed.
 Phase B (API contract + docs consistency) completed.
 Phase C (runtime performance + benchmark baseline) completed.
+Phase D (React product layer) completed (PR-D1 + PR-D2 + PR-D3).
 
 ## Install
 
 Recommended split packages:
 
 ```bash
-npm install @pixel-engine/core @pixel-engine/effects
+npm install @pixel-engine/core @pixel-engine/effects @pixel-engine/react
 ```
 
 Compatibility aggregate package:
@@ -67,22 +68,19 @@ grid.setCanvasBackground(null);
 ## React Example
 
 ```tsx
-import { useEffect, useRef } from "react";
-import { PixelEngine } from "@pixel-engine/core";
-import { PixelGridEffect } from "@pixel-engine/effects";
+import { useCallback } from "react";
+import { PixelGridCanvas } from "@pixel-engine/react";
 import catPngUrl from "./assets/cat.png";
 
 export function PixelBackground() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const width = 1000;
-    const height = 700;
-    const engine = new PixelEngine({ canvas, width, height });
-    const grid = new PixelGridEffect(engine, width, height, {
+  return (
+    <PixelGridCanvas
+      width={1000}
+      height={700}
+      onHoverStart={(event) => console.log("hover start", event.x, event.y)}
+      onHoverEnd={(event) => console.log("hover end", event.x, event.y)}
+      onRipple={(event) => console.log("ripple", event.x, event.y)}
+      gridConfig={{
       colors: ["#334155", "#475569", "#64748b"],
       gap: 6,
       expandEase: 0.08,
@@ -91,31 +89,38 @@ export function PixelBackground() {
       rippleEffects: { speed: 0.5, thickness: 50, strength: 30, maxRipples: 25 },
       imageMask: {
         src: catPngUrl,
-        centerX: width * 0.5,
-        centerY: height * 0.5,
+        centerX: 500,
+        centerY: 350,
         scale: 2,
         sampleMode: "threshold"
       }
-    });
-
-    engine.addEntity(grid);
-    engine.start();
-
-    const onClick = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      grid.triggerRipple(e.clientX - rect.left, e.clientY - rect.top);
-    };
-    canvas.addEventListener("click", onClick);
-
-    return () => {
-      canvas.removeEventListener("click", onClick);
-      engine.destroy();
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} />;
+    }}
+    />
+  );
 }
 ```
+
+## PixelCard in 10 lines
+
+```tsx
+import { PixelCard } from "@pixel-engine/react";
+
+export function HeroCard() {
+  return (
+    <PixelCard width={420} height={240} gridConfig={{ colors: ["#0f172a", "#1e293b"], gap: 7, expandEase: 0.08, breathSpeed: 1 }}>
+      <h3>Pixel Card</h3>
+    </PixelCard>
+  );
+}
+```
+
+`PixelCard` now supports both modes:
+- engine mode: no `gridConfig` (raw engine canvas layer)
+- grid mode: provide `gridConfig` for declarative `PixelGridEffect`
+
+DX hardening:
+- `usePixelGridEffect` adds `effectKey` so inline config objects do not recreate effects accidentally.
+- change `effectKey` explicitly when you want to recreate the underlying `PixelGridEffect`.
 
 Compatibility aggregate import remains available:
 
@@ -142,7 +147,7 @@ Use bundled asset URLs (`import img from "./asset.png"`). Do not use `"/src/..."
 - `npm run test`: runs Vitest.
 - `npm run build`: builds distributable library with `tsup` (ESM/CJS/types).
 - `npm run typecheck`: TypeScript validation (`tsc --noEmit`).
-- `npm run build:packages`: builds `@pixel-engine/core` and `@pixel-engine/effects`.
+- `npm run build:packages`: builds `@pixel-engine/core`, `@pixel-engine/effects`, and `@pixel-engine/react`.
 - `npm run build:all`: builds aggregate + split packages.
 - `npm run verify`: test + build + typecheck.
 - `npm run bench:pixelgrid`: reproducible PixelGrid performance baseline.
@@ -159,6 +164,7 @@ Use bundled asset URLs (`import img from "./asset.png"`). Do not use `"/src/..."
 
 - `@pixel-engine/core`: runtime primitives (engine, loop, scene, renderers, input, base grid helpers).
 - `@pixel-engine/effects`: high-level effects (`PixelGridEffect`), influences, masks.
+- `@pixel-engine/react`: React hook/components (`usePixelEngine`, `usePixelGridEffect`, `PixelCanvas`, `PixelGridCanvas`, `PixelSurface`, `PixelCard`).
 
 Benefits:
 - smaller dependency surface per use-case

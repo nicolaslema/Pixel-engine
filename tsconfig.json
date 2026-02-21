@@ -11,7 +11,8 @@
     "baseUrl": ".",
     "paths": {
       "@pixel-engine/core": ["packages/core/src/index.ts"],
-      "@pixel-engine/effects": ["packages/effects/src/index.ts"]
+      "@pixel-engine/effects": ["packages/effects/src/index.ts"],
+      "@pixel-engine/react": ["packages/react/src/index.ts"]
     }
   },
   "include": ["src"]

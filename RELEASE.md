@@ -8,6 +8,7 @@ This document defines the publish order and release checks for the Pixel Engine 
 - root `package.json`
 - `packages/core/package.json`
 - `packages/effects/package.json`
+- `packages/react/package.json`
 - Be authenticated in npm:
   - `npm whoami`
 - Ensure clean git state on your release branch.
@@ -28,6 +29,7 @@ This executes:
   - `pixel-engine`
   - `@pixel-engine/core`
   - `@pixel-engine/effects`
+  - `@pixel-engine/react`
 - consumer smoke test from local tarballs (real install + import check)
 
 ## 2. Publish order
@@ -36,10 +38,12 @@ Publish strictly in this order:
 
 1. `@pixel-engine/core`
 2. `@pixel-engine/effects`
-3. `pixel-engine` (aggregate compatibility package)
+3. `@pixel-engine/react`
+4. `pixel-engine` (aggregate compatibility package)
 
 Reason:
 - `effects` depends on `core`.
+- `react` depends on `core` and `effects`.
 - aggregate package should be published last to avoid broken install windows.
 
 ## 3. Versioning strategy
@@ -56,6 +60,7 @@ Reason:
 ```bash
 npm publish -w @pixel-engine/core --access public
 npm publish -w @pixel-engine/effects --access public
+npm publish -w @pixel-engine/react --access public
 npm publish --access public
 ```
 
@@ -64,6 +69,7 @@ For pre-release channel:
 ```bash
 npm publish -w @pixel-engine/core --tag next --access public
 npm publish -w @pixel-engine/effects --tag next --access public
+npm publish -w @pixel-engine/react --tag next --access public
 npm publish --tag next --access public
 ```
 

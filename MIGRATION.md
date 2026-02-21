@@ -2,6 +2,75 @@
 
 This guide covers migration to the formal v1 stable baseline and the new package split.
 
+## Update: React Product Layer Completion + PixelCard DX (v1.0.6)
+
+- `Phase D` completed with `PR-D3`.
+- `PixelCard` now supports declarative grid mode via `gridConfig`.
+- Added React DX hardening:
+  - `effectKey` for `usePixelGridEffect` / `PixelGridCanvas` to control intentional effect recreation.
+
+Recommended `PixelCard` usage:
+
+```tsx
+<PixelCard
+  width={420}
+  height={240}
+  gridConfig={{
+    colors: ["#0f172a", "#1e293b"],
+    gap: 7,
+    expandEase: 0.08,
+    breathSpeed: 1
+  }}
+/>
+```
+
+## Update: React Product Layer Callbacks + Declarative Grid (v1.0.5)
+
+- `@pixel-engine/react` now includes:
+  - `usePixelGridEffect`
+  - `PixelGridCanvas`
+- New high-level callbacks:
+  - `onHoverStart`
+  - `onHoverEnd`
+  - `onRipple` (grid hook/component path)
+- Declarative usage now supports ripple trigger wiring with `rippleTrigger` (`click`, `pointerdown`, `none`).
+
+If you were wiring `PixelGridEffect` manually inside `useEffect`, you can migrate to:
+
+```tsx
+<PixelGridCanvas
+  width={800}
+  height={500}
+  onRipple={(event) => console.log(event.x, event.y)}
+  gridConfig={{
+    colors: ["#334155", "#475569", "#64748b"],
+    gap: 6,
+    expandEase: 0.08,
+    breathSpeed: 0.9
+  }}
+/>
+```
+
+## Update: React Product Layer Baseline (v1.0.4)
+
+- New package: `@pixel-engine/react`.
+- New exports:
+  - `usePixelEngine`
+  - `PixelCanvas`
+  - `PixelSurface`
+  - `PixelCard`
+- The React package is SSR-safe (`window` guards) and handles engine lifecycle cleanup by default.
+
+Install:
+
+```bash
+npm install @pixel-engine/react @pixel-engine/core @pixel-engine/effects
+```
+
+Maintainer note:
+- In this phase baseline, `PixelCanvas` + `onReady` is the simplest integration path.
+- This baseline was extended by v1.0.5 and v1.0.6 with declarative grid hooks/components and interaction callbacks.
+
 ## Update: API Contract Cleanup + Runtime Optimization (v1.0.3)
 
 - Aggregate package (`pixel-engine`) now re-exports directly from:
@@ -38,7 +107,7 @@ This now includes:
 
 Maintainer note:
 - Run `npm run release:check` before every public publish.
-- Follow publish order in `RELEASE.md` (`core` -> `effects` -> aggregate).
+- Follow publish order in `RELEASE.md` (`core` -> `effects` -> `react` -> aggregate).
 
 ## Update: Canvas Background via PixelGridEffect (v1.0.1)
 
@@ -72,13 +141,14 @@ For `PixelGridEffect` scenes, move that value to `canvasBackground` to keep conf
 - Recommended split by concern:
   - `@pixel-engine/core` for engine/runtime/renderer/scene primitives
   - `@pixel-engine/effects` for `PixelGridEffect` and influence systems
+  - `@pixel-engine/react` for React lifecycle hook + ready-to-use canvas/surface/card components
 
 You can still use `pixel-engine` as aggregate compatibility package.
 
 ## 2. Installation
 
 ```bash
-npm install @pixel-engine/core @pixel-engine/effects
+npm install @pixel-engine/core @pixel-engine/effects @pixel-engine/react
 ```
 
 Or keep compatibility aggregate:
@@ -134,6 +204,7 @@ npm run build:packages
 `build:packages` builds:
 - `@pixel-engine/core`
 - `@pixel-engine/effects`
+- `@pixel-engine/react`
 
 ## 7. Verification checklist
 

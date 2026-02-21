@@ -1,0 +1,86 @@
+import { CSSProperties, PropsWithChildren } from "react";
+import { PixelCanvas } from "./PixelCanvas";
+import { PixelGridCanvas } from "./PixelGridCanvas";
+import { PixelCanvasProps, PixelGridCanvasProps } from "./types";
+
+interface PixelCardBaseProps extends PropsWithChildren {
+  containerClassName?: string;
+  containerStyle?: CSSProperties;
+  overlayClassName?: string;
+  overlayStyle?: CSSProperties;
+  radius?: number;
+  padding?: number;
+}
+
+export type PixelCardProps = PixelCardBaseProps & (PixelCanvasProps | PixelGridCanvasProps);
+
+const surfaceStyle: CSSProperties = {
+  position: "relative",
+  width: "100%",
+  height: "100%",
+  overflow: "hidden"
+};
+
+const canvasStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  display: "block",
+  width: "100%",
+  height: "100%"
+};
+
+export function PixelCard({
+  children,
+  radius = 16,
+  padding = 16,
+  className,
+  style,
+  containerClassName,
+  containerStyle,
+  overlayClassName,
+  overlayStyle,
+  ...canvasProps
+}: PixelCardProps) {
+  const isGridCard =
+    "gridConfig" in canvasProps &&
+    typeof canvasProps.gridConfig === "object" &&
+    canvasProps.gridConfig !== null;
+
+  const mergedContainerStyle: CSSProperties = {
+    ...surfaceStyle,
+    borderRadius: radius,
+    ...containerStyle
+  };
+  const mergedOverlayStyle: CSSProperties = {
+    position: "relative",
+    zIndex: 1,
+    borderRadius: radius,
+    padding,
+    ...overlayStyle
+  };
+  const mergedCanvasStyle: CSSProperties = {
+    ...canvasStyle,
+    ...style
+  };
+
+  return (
+    <div className={containerClassName} style={mergedContainerStyle}>
+      {isGridCard ? (
+        <PixelGridCanvas
+          {...(canvasProps as PixelGridCanvasProps)}
+          className={className}
+          style={mergedCanvasStyle}
+        />
+      ) : (
+        <PixelCanvas
+          {...(canvasProps as PixelCanvasProps)}
+          className={className}
+          style={mergedCanvasStyle}
+        />
+      )}
+      <div className={overlayClassName} style={mergedOverlayStyle}>
+        {children}
+      </div>
+    </div>
+  );
+}
