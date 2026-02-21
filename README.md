@@ -143,6 +143,7 @@ Use bundled asset URLs (`import img from "./asset.png"`). Do not use `"/src/..."
 - `npm run build:packages`: builds `@pixel-engine/core` and `@pixel-engine/effects`.
 - `npm run build:all`: builds aggregate + split packages.
 - `npm run verify`: test + build + typecheck.
+- `npm run bench:pixelgrid`: reproducible PixelGrid performance baseline.
 - `npm run smoke:consumer`: validates package consumption from local tarballs.
 - `npm run release:check`: verify + pack dry-runs + consumer smoke test.
 - `npm run build:playground`: builds playground app with Vite.
@@ -150,6 +151,7 @@ Use bundled asset URLs (`import img from "./asset.png"`). Do not use `"/src/..."
 - Release notes: `CHANGELOG.md`
 - Migration guide: `MIGRATION.md`
 - Release workflow: `RELEASE.md`
+- Benchmark notes: `BENCHMARKS.md`
 
 ## Package Split
 

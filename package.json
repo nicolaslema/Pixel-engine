@@ -51,6 +51,7 @@
     "typecheck": "tsc --noEmit",
     "build:packages": "npm run build -w @pixel-engine/core && npm run build -w @pixel-engine/effects",
     "build:all": "npm run build && npm run build:packages",
+    "bench:pixelgrid": "npm run build:all && node scripts/bench/pixelgrid-bench.cjs",
     "verify": "npm run test && npm run build:all && npm run typecheck",
     "pack:dry": "npm pack --dry-run && npm pack --dry-run -w @pixel-engine/core && npm pack --dry-run -w @pixel-engine/effects",
     "smoke:consumer": "node scripts/smoke-consumer.mjs",

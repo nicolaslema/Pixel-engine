@@ -10,9 +10,7 @@ import {
 import { resolvePixelGridConfig } from "./pixel-grid/normalizeConfig";
 import {
   createPixelGridRuntimeState,
-  PixelGridRuntimeState,
-  compactAliveRipples,
-  resetCells
+  PixelGridRuntimeState
 } from "./pixel-grid/internal/runtime-state";
 import { createMaskStateMachine } from "./pixel-grid/internal/mask-state-machine";
 import {
@@ -22,11 +20,13 @@ import {
   shouldAffectCell
 } from "./pixel-grid/internal/reactive-effects";
 import { applyBreathingSystem } from "./pixel-grid/internal/breathing-system";
+import { renderPixelCells } from "./pixel-grid/internal/render-pass";
+import { runPixelGridUpdatePipeline } from "./pixel-grid/internal/update-pipeline";
+import { setupBaseInfluences } from "./pixel-grid/internal/influence-setup";
+import { DEFAULT_PIXEL_GRID_RUNTIME_TUNING } from "./pixel-grid/internal/runtime-tuning";
 
 import { InfluenceManager } from "../influences/InfluenceManager";
 import { RippleInfluence } from "../influences/RippleInfluence";
-import { HoverInfluence } from "../influences/HoverInfluence";
-import { OrganicNoiseInfluence } from "../influences/OrganicNoiseInfluence";
 import { TextMaskInfluence } from "../influences/Masks/TextMaskInfluence";
 import { ImageMaskInfluence } from "../influences/Masks/ImageMaskInfluence";
 import { MaskStateMachine } from "./pixel-grid/internal/mask-state-machine";
@@ -50,6 +50,7 @@ export class PixelGridEffect extends Entity {
   private readonly rippleEffects: ResolvedPixelGridConfig["rippleEffects"];
   private readonly breathing: ResolvedPixelGridConfig["breathing"];
   private readonly autoMorph: ResolvedPixelGridConfig["autoMorph"];
+  private maskCacheIsZeroed = true;
 
   private readonly maskState: MaskStateMachine;
 
@@ -89,14 +90,10 @@ export class PixelGridEffect extends Entity {
     this.createGrid();
 
     this.influenceManager = new InfluenceManager(
-      config.gap,
+      this.config.gap,
       this.columns,
       this.rows,
-      {
-        compressionStrength: 2.5,
-        enableSmoothing: true,
-        smoothingRadius: 1
-      }
+      DEFAULT_PIXEL_GRID_RUNTIME_TUNING
     );
 
     const imageMask = config.imageMask?.src
@@ -170,9 +167,7 @@ export class PixelGridEffect extends Entity {
     const hasMorph = morphMask !== null;
 
     if (!hasImage && !hasText && !hasMorph) {
-      this.runtime.activeMaskWeightCache.fill(0);
-      this.runtime.imageMaskWeightCache.fill(0);
-      this.runtime.textMaskWeightCache.fill(0);
+      this.zeroMaskWeightCaches();
       return;
     }
 
@@ -194,40 +189,58 @@ export class PixelGridEffect extends Entity {
       this.runtime.textMaskWeightCache[i] = textOrMorph;
       this.runtime.activeMaskWeightCache[i] = Math.max(image, textOrMorph);
     }
+    this.maskCacheIsZeroed = false;
+  }
+
+  private zeroMaskWeightCaches(): void {
+    if (this.maskCacheIsZeroed) return;
+    this.runtime.activeMaskWeightCache.fill(0);
+    this.runtime.imageMaskWeightCache.fill(0);
+    this.runtime.textMaskWeightCache.fill(0);
+    this.maskCacheIsZeroed = true;
+  }
+
+  private hasAnyMaskSources(): boolean {
+    return (
+      this.maskState.imageMask !== null ||
+      this.maskState.textMask !== null ||
+      this.maskState.morphMask !== null
+    );
+  }
+
+  private shouldRecomputeMaskWeightCache(): boolean {
+    const needsMaskScope =
+      this.hoverEffects.interactionScope === "imageMask" &&
+      ((this.influenceOptions.hover && this.hoverEffects.mode === "reactive") ||
+        (this.influenceOptions.ripple &&
+          this.rippleEffects.enabled &&
+          this.runtime.activeRipples.length > 0));
+
+    const needsBreathingMasks =
+      this.breathing.enabled &&
+      (this.breathing.affectImage || this.breathing.affectText);
+
+    const needsMaskWeights = needsMaskScope || needsBreathingMasks;
+    if (!needsMaskWeights) return false;
+
+    if (!this.hasAnyMaskSources()) {
+      this.zeroMaskWeightCaches();
+      return false;
+    }
+
+    return true;
   }
 
   private setupInfluences(): void {
-    const hoverMode = this.hoverEffects.mode;
-
-    if (
-      this.influenceOptions.hover &&
-      hoverMode === "classic"
-    ) {
-      this.influenceManager.add(
-        new HoverInfluence(
-          this.engine,
-          this.hoverEffects.radius,
-          this.config.breathSpeed,
-          this.hoverEffects.strength,
-          {
-            radiusY: this.hoverEffects.radiusY,
-            shape: this.hoverEffects.shape
-          }
-        )
-      );
-    }
-
-    if (this.influenceOptions.organic) {
-      this.influenceManager.add(
-        new OrganicNoiseInfluence(
-          this.width * 0.5,
-          this.height * 0.5,
-          this.config.organicRadius ?? 150,
-          this.config.organicStrength ?? 0.4,
-          this.config.organicSpeed ?? 0.002
-        )
-      );
-    }
+    setupBaseInfluences({
+      engine: this.engine,
+      width: this.width,
+      height: this.height,
+      config: this.config,
+      options: this.influenceOptions,
+      hoverEffects: this.hoverEffects,
+      influenceManager: this.influenceManager
+    });
   }
 
   private shouldAffectWithReactiveHover(index: number, cell: PixelCell): boolean {
@@ -293,61 +306,24 @@ export class PixelGridEffect extends Entity {
   }
 
   update(delta: number): void {
-    this.runtime.reactiveTime += delta;
-
-    resetCells(this.cells);
-
-    this.influenceManager.update(delta);
-    compactAliveRipples(this.runtime.activeRipples);
-    this.maskState.update(delta);
-
-    this.influenceManager.apply(
-      this.cells,
-      this.getCellIndexRef
-    );
-    this.updateMaskWeightCache();
-
-    this.applyReactiveHover();
-    this.applyReactiveRippleEffects();
-    this.applyBreathing();
-
-    for (let i = 0; i < this.cells.length; i++) {
-      this.cells[i].update(this.config.expandEase);
-    }
+    runPixelGridUpdatePipeline({
+      delta,
+      cells: this.cells,
+      expandEase: this.config.expandEase,
+      runtime: this.runtime,
+      influenceManager: this.influenceManager,
+      maskState: this.maskState,
+      getCellIndex: this.getCellIndexRef,
+      shouldRecomputeMaskWeightCache: () => this.shouldRecomputeMaskWeightCache(),
+      updateMaskWeightCache: () => this.updateMaskWeightCache(),
+      applyReactiveHover: () => this.applyReactiveHover(),
+      applyReactiveRippleEffects: () => this.applyReactiveRippleEffects(),
+      applyBreathing: () => this.applyBreathing()
+    });
   }
 
   render(renderer: IRenderer): void {
-    const ctx = renderer.getContext();
-    let currentColor = "";
-    let currentOpacity = -1;
-
-    for (let i = 0; i < this.cells.length; i++) {
-      const cell = this.cells[i];
-      if (cell.size <= 0.5) continue;
-
-      if (cell.color !== currentColor) {
-        currentColor = cell.color;
-        ctx.fillStyle = currentColor;
-      }
-
-      if (cell.opacity !== currentOpacity) {
-        currentOpacity = cell.opacity;
-        ctx.globalAlpha = currentOpacity;
-      }
-
-      const offset = (cell.gap - cell.size) * 0.5;
-
-      ctx.fillRect(
-        (cell.x + cell.offsetX + offset) | 0,
-        (cell.y + cell.offsetY + offset) | 0,
-        cell.size | 0,
-        cell.size | 0
-      );
-    }
-
-    if (currentOpacity !== 1) {
-      ctx.globalAlpha = 1;
-    }
+    renderPixelCells(renderer, this.cells);
   }
 
   triggerRipple(x: number, y: number): void {

@@ -21,6 +21,7 @@ export class InfluenceManager {
   private compressionStrength: number;
   private enableSmoothing: boolean;
   private smoothingRadius: number;
+  private smoothingBuffer = new Float32Array(0);
 
   constructor(
     private gap: number,
@@ -183,8 +184,10 @@ export class InfluenceManager {
     cells: InfluenceCell[],
     getCellIndex: (x: number, y: number) => number
   ): void {
-
-    const temp = new Float32Array(cells.length);
+    if (this.smoothingBuffer.length !== cells.length) {
+      this.smoothingBuffer = new Float32Array(cells.length);
+    }
+    const temp = this.smoothingBuffer;
 
     for (let x = 0; x < this.columns; x++) {
       for (let y = 0; y < this.rows; y++) {
