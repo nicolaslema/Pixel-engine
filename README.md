@@ -14,6 +14,8 @@ High-performance 2D pixel simulation engine for browser apps and UI frameworks.
 
 Stable API baseline (v1) for core + `PixelGridEffect`.
 Phase A (publish architecture hardening) completed.
+Phase B (API contract + docs consistency) completed.
+Phase C (runtime performance + benchmark baseline) completed.
 
 ## Install
 

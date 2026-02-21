@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.0.3] - 2026-02-21
+
+### Changed
+- Completed Phase B API contract cleanup:
+  - aggregate package (`pixel-engine`) now re-exports from `@pixel-engine/core` and `@pixel-engine/effects`.
+  - removed legacy/unused type files under `src/types/*`.
+  - removed empty placeholders:
+    - `src/effects/PixelEffect.ts`
+    - `src/grid/SpatialHash.ts`
+    - `packages/core/src/grid/SpatialHash.ts`
+- Completed Phase C runtime optimization and maintainability pass:
+  - `InfluenceManager` smoothing now reuses a persistent buffer (no per-frame smoothing allocation).
+  - `PixelGridEffect` mask cache recomputation is now conditional (only when needed by runtime features).
+  - `PixelGridEffect` internals were further modularized with extracted update/render/influence setup runtime modules.
+- Added reproducible benchmark flow:
+  - `npm run bench:pixelgrid`
+  - baseline + post-refactor snapshots documented in `BENCHMARKS.md`.
+
 ## [1.0.2] - 2026-02-21
 
 ### Added

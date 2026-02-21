@@ -2,6 +2,23 @@
 
 This guide covers migration to the formal v1 stable baseline and the new package split.
 
+## Update: API Contract Cleanup + Runtime Optimization (v1.0.3)
+
+- Aggregate package (`pixel-engine`) now re-exports directly from:
+  - `@pixel-engine/core`
+  - `@pixel-engine/effects`
+- Legacy unused files removed (`src/types/*`, empty placeholders) with no public API impact.
+- Runtime internals for `PixelGridEffect` were modularized to improve maintainability.
+- New reproducible benchmark command:
+
+```bash
+npm run bench:pixelgrid
+```
+
+Maintainer note:
+- Use `BENCHMARKS.md` snapshots as before/after reference when changing runtime paths.
+- Keep aggregate usage as compatibility path; split-package imports remain recommended.
+
 ## Update: Publish Hardening + Consumer Smoke Test (v1.0.2)
 
 - Package boundaries are now physically decoupled in `packages/core` and `packages/effects`.
