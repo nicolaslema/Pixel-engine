@@ -25,12 +25,32 @@ This executes:
 - tests
 - full builds (root + workspace packages)
 - typecheck
+- release docs version check (`CHANGELOG.md`, `MIGRATION.md`)
 - dry-run pack for:
   - `pixel-engine`
   - `@pixel-engine/core`
   - `@pixel-engine/effects`
   - `@pixel-engine/react`
+- generated tarball verification (`npm pack` artifacts exist and are non-empty)
 - consumer smoke test from local tarballs (real install + import check)
+
+## 1.1 Optional docs scaffold automation
+
+Before finalizing release notes, you can scaffold docs entries automatically:
+
+```bash
+npm run release:docs:prepare
+```
+
+Or for a specific target version:
+
+```bash
+npm run release:docs:prepare -- 1.0.13
+```
+
+This inserts templates (only if missing) in:
+- `CHANGELOG.md`
+- `MIGRATION.md`
 
 ## 2. Publish order
 
@@ -79,3 +99,5 @@ npm publish --tag next --access public
 - Smoke test installation in a clean React project.
 - Update `CHANGELOG.md`.
 - Update `MIGRATION.md` if API changed.
+
+For an actionable runbook, use: `RELEASE_CHECKLIST.md`.

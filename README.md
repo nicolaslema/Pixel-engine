@@ -7,6 +7,7 @@ High-performance 2D pixel simulation engine for browser apps and UI frameworks.
 - Stable API baseline for core runtime + `PixelGridEffect`
 - Phase A/B/C/D completed
 - Phase E completed (PR-E1 + PR-E2 + PR-E3)
+- Phase F completed (PR-F1 + PR-F2 + PR-F3)
 
 ## Install
 
@@ -253,17 +254,24 @@ Validated in an external React project (Vite + TypeScript) with local package in
 ## Scripts
 
 - `npm run test`
+- `npm run test:ci`
+- `npm run test:visual`
 - `npm run build`
 - `npm run build:packages`
 - `npm run build:all`
 - `npm run typecheck`
 - `npm run verify`
 - `npm run release:check`
+- `npm run release:docs:prepare`
+- `npm run release:docs:check`
+- `npm run release:pack:verify`
 
 Detailed scripts:
 
 - `npm run dev`: runs playground with Vite.
 - `npm run test`: runs Vitest.
+- `npm run test:ci`: runs Vitest once (CI mode).
+- `npm run test:visual`: runs deterministic PixelGrid visual baseline snapshots.
 - `npm run build`: builds distributable library with tsup (ESM/CJS/types).
 - `npm run typecheck`: TypeScript validation (`tsc --noEmit`).
 - `npm run build:packages`: builds `@pixel-engine/core`, `@pixel-engine/effects`, and `@pixel-engine/react`.
@@ -272,7 +280,21 @@ Detailed scripts:
 - `npm run bench:pixelgrid`: reproducible PixelGrid performance baseline.
 - `npm run smoke:consumer`: validates package consumption from local tarballs.
 - `npm run release:check`: verify + pack dry-runs + consumer smoke test.
+- `npm run release:docs:prepare`: scaffold release entries in `CHANGELOG.md` and `MIGRATION.md`.
+- `npm run release:docs:check`: validate release docs version coverage.
+- `npm run release:pack:verify`: generate and verify non-empty tarballs for all publishable packages.
 - `npm run build:playground`: builds playground app with Vite.
+
+CI quality gates:
+
+- GitHub Actions workflow: `.github/workflows/ci.yml`
+- Required checks:
+  - `npm run test:ci`
+  - `npm run build`
+  - `npm run typecheck`
+  - `npm run build:packages`
+  - `npm run smoke:consumer`
+  - `npm run test:visual`
 
 References:
 
@@ -281,6 +303,7 @@ References:
 - Migration guide: `MIGRATION.md`
 - Release workflow: `RELEASE.md`
 - Benchmark notes: `BENCHMARKS.md`
+- Formal publish checklist: `RELEASE_CHECKLIST.md`
 
 ## Package Split (Detailed)
 

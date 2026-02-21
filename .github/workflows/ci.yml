@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gates:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm run test:ci
+
+      - name: Build (aggregate)
+        run: npm run build
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build (packages)
+        run: npm run build:packages
+
+      - name: Release Docs Check
+        run: npm run release:docs:check
+
+      - name: Pack Verify
+        run: npm run release:pack:verify
+
+      - name: Consumer Smoke
+        run: npm run smoke:consumer
+
+      - name: Visual Baseline
+        run: npm run test:visual

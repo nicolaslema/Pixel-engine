@@ -53,12 +53,17 @@
     "build:all": "npm run build && npm run build:packages",
     "bench:pixelgrid": "npm run build:all && node scripts/bench/pixelgrid-bench.cjs",
     "verify": "npm run test && npm run build:all && npm run typecheck",
+    "release:docs:prepare": "node scripts/release/prepare-release-docs.mjs",
+    "release:docs:check": "node scripts/release/check-release-docs.mjs",
+    "release:pack:verify": "node scripts/release/verify-packages.mjs",
     "pack:dry": "npm pack --dry-run && npm pack --dry-run -w @pixel-engine/core && npm pack --dry-run -w @pixel-engine/effects && npm pack --dry-run -w @pixel-engine/react",
     "smoke:consumer": "node scripts/smoke-consumer.mjs",
-    "release:check": "npm run verify && npm run pack:dry && npm run smoke:consumer",
+    "release:check": "npm run verify && npm run release:docs:check && npm run pack:dry && npm run release:pack:verify && npm run smoke:consumer",
     "build:playground": "vite build",
     "preview": "vite preview",
     "test": "vitest",
+    "test:ci": "vitest run",
+    "test:visual": "vitest run src/entities/pixel-grid/visual-baseline.test.ts",
     "prepublishOnly": "npm run release:check"
   },
   "devDependencies": {

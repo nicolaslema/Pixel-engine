@@ -2,6 +2,62 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.0.13] - 2026-02-21
+
+### Added
+- Completed Phase F PR-F3 release automation baseline.
+- Added release scripts:
+  - `release:docs:prepare`
+  - `release:docs:check`
+  - `release:pack:verify`
+- Added `RELEASE_CHECKLIST.md` as formal publish runbook.
+
+### Changed
+- `release:check` now enforces:
+  - release docs validation
+  - generated tarball verification
+  - existing quality/build/smoke checks
+- CI quality gates now include:
+  - `npm run release:docs:check`
+  - `npm run release:pack:verify`
+
+## [1.0.12] - 2026-02-21
+
+### Added
+- Completed Phase F PR-F2:
+  - CI consumer smoke validation step (`npm run smoke:consumer`).
+  - deterministic visual baseline test (`npm run test:visual`).
+- Added `PixelGrid` visual snapshot suite:
+  - `src/entities/pixel-grid/visual-baseline.test.ts`
+  - snapshot baseline file for regression comparisons.
+
+### Changed
+- `scripts/smoke-consumer.mjs` now validates `@pixel-engine/react` package consumption in addition to:
+  - `pixel-engine`
+  - `@pixel-engine/core`
+  - `@pixel-engine/effects`
+- CI workflow now executes:
+  - consumer smoke test
+  - visual baseline regression test
+
+## [1.0.11] - 2026-02-21
+
+### Added
+- Started Phase F with PR-F1 quality-gates baseline.
+- Added GitHub Actions CI workflow: `.github/workflows/ci.yml`.
+- Added `test:ci` script (`vitest run`) for deterministic CI test execution.
+
+### Changed
+- CI now enforces mandatory checks on PRs/push:
+  - `npm run test:ci`
+  - `npm run build`
+  - `npm run typecheck`
+  - `npm run build:packages`
+- Vitest monorepo package resolution hardened via root Vite aliases for:
+  - `@pixel-engine/core`
+  - `@pixel-engine/effects`
+  - `@pixel-engine/react`
+
 ## [1.0.10] - 2026-02-21
 
 ### Added

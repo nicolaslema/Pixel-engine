@@ -31,10 +31,12 @@ try {
   run(`npm pack --pack-destination "${packsDir}"`);
   run(`npm pack --pack-destination "${packsDir}" -w @pixel-engine/core`);
   run(`npm pack --pack-destination "${packsDir}" -w @pixel-engine/effects`);
+  run(`npm pack --pack-destination "${packsDir}" -w @pixel-engine/react`);
 
   const aggregateTgz = findPack("pixel-engine-");
   const coreTgz = findPack("pixel-engine-core-");
   const effectsTgz = findPack("pixel-engine-effects-");
+  const reactTgz = findPack("pixel-engine-react-");
 
   writeFileSync(
     join(appDir, "package.json"),
@@ -54,12 +56,17 @@ try {
     [
       'import { PixelEngine as CoreEngine } from "@pixel-engine/core";',
       'import { PixelGridEffect as EffectsGrid } from "@pixel-engine/effects";',
+      'import { PixelGridCanvas, PixelCanvas, PixelCard, usePixelGridEffect } from "@pixel-engine/react";',
       'import { PixelEngine as AggregateEngine, PixelGridEffect as AggregateGrid } from "pixel-engine";',
       "",
       "if (typeof CoreEngine !== 'function') throw new Error('Missing CoreEngine export');",
       "if (typeof EffectsGrid !== 'function') throw new Error('Missing EffectsGrid export');",
       "if (typeof AggregateEngine !== 'function') throw new Error('Missing aggregate CoreEngine export');",
       "if (typeof AggregateGrid !== 'function') throw new Error('Missing aggregate EffectsGrid export');",
+      "if (typeof PixelGridCanvas !== 'function') throw new Error('Missing React PixelGridCanvas export');",
+      "if (typeof PixelCanvas !== 'function') throw new Error('Missing React PixelCanvas export');",
+      "if (typeof PixelCard !== 'function') throw new Error('Missing React PixelCard export');",
+      "if (typeof usePixelGridEffect !== 'function') throw new Error('Missing React usePixelGridEffect export');",
       "console.log('Smoke consumer import check passed');"
     ].join("\n")
   );
@@ -67,8 +74,10 @@ try {
   run(
     [
       "npm install --no-package-lock --ignore-scripts",
+      "react react-dom",
       `"${coreTgz}"`,
       `"${effectsTgz}"`,
+      `"${reactTgz}"`,
       `"${aggregateTgz}"`
     ].join(" "),
     appDir

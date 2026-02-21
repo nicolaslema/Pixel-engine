@@ -2,6 +2,53 @@
 
 This guide covers migration to the formal v1 stable baseline and the new package split.
 
+## Update: Release v1.0.13 (2026-02-21)
+
+- Release automation scripts added:
+  - `npm run release:docs:prepare`
+  - `npm run release:docs:check`
+  - `npm run release:pack:verify`
+- `npm run release:check` is now stricter and validates:
+  - release docs coverage
+  - generated tarballs for all publishable packages
+  - existing test/build/type/smoke quality gates
+
+Maintainer note:
+- Before publishing, run `npm run release:docs:prepare` and replace placeholders if generated.
+- Treat `RELEASE_CHECKLIST.md` as the source of truth for publish steps/order.
+
+## Update: Phase F Consumer Smoke + Visual Baseline (v1.0.12)
+
+- CI now includes:
+  - `npm run smoke:consumer`
+  - `npm run test:visual`
+- `smoke:consumer` now validates tarball consumption for:
+  - `pixel-engine`
+  - `@pixel-engine/core`
+  - `@pixel-engine/effects`
+  - `@pixel-engine/react`
+- Added deterministic visual baseline snapshots for PixelGrid runtime behavior.
+
+Maintainer note:
+- Update snapshots intentionally with:
+  - `npx vitest run src/entities/pixel-grid/visual-baseline.test.ts -u`
+- Keep this update only for deliberate visual/runtime changes, not incidental refactors.
+
+## Update: Phase F CI Quality Gates Baseline (v1.0.11)
+
+- Added CI workflow: `.github/workflows/ci.yml`
+- New script:
+  - `npm run test:ci`
+- CI gates now validate:
+  - tests
+  - aggregate build
+  - typecheck
+  - package builds
+
+Maintainer note:
+- Keep local and CI execution aligned by using `npm run test:ci` for deterministic one-pass tests.
+- In monorepo development, test resolution now maps `@pixel-engine/*` directly to package `src` entries via root Vite aliases, avoiding dependency on prebuilt `dist` artifacts during tests.
+
 ## Update: Phase E Documentation Matrix + Compatibility Notes (v1.0.10)
 
 - Added docs matrix for preset selection and component capabilities.
