@@ -28,6 +28,7 @@ This executes:
   - `pixel-engine`
   - `@pixel-engine/core`
   - `@pixel-engine/effects`
+- consumer smoke test from local tarballs (real install + import check)
 
 ## 2. Publish order
 
