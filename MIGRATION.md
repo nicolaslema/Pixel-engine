@@ -2,6 +2,60 @@
 
 This guide covers migration to the formal v1 stable baseline and the new package split.
 
+## Update: Phase E Documentation Matrix + Compatibility Notes (v1.0.10)
+
+- Added docs matrix for preset selection and component capabilities.
+- Added React compatibility notes (SSR, assets, overlay events, `effectKey` strategy).
+- Expanded guidance for choosing between:
+  - `preset`
+  - `gridConfig`
+  - `preset + gridConfig`
+  - helper-based reusable configs
+
+## Update: Preset Tuning + Validation Hardening (v1.0.9)
+
+- New preset metadata APIs:
+  - `listPixelPresets()`
+  - `getPixelPresetDefinition(name)`
+- `resolveGridConfigInput` now applies stronger sanitization for nested numeric values.
+- Added contextual warnings (example: using `hero-image` preset without image mask).
+
+Recommended:
+- use `listPixelPresets()` to drive preset selectors in your UI/playground.
+- use `getPixelPresetDefinition(name)` to show preset guidance/tooltips in-app.
+
+## Update: Phase E Foundation - Presets + Declarative Mask API (v1.0.8)
+
+- `@pixel-engine/react` now supports:
+  - `preset` (`minimal`, `card-soft`, `card-ripple`, `hero-image`)
+  - declarative `mask` (`text`, `image`, `hybrid`)
+- `gridConfig` is now optional when using presets.
+- New helper exports:
+  - `createPixelPreset(name, overrides?)`
+  - `mergePixelOptions(base, override)`
+  - `createMaskConfig(mask)`
+
+Recommended pattern:
+- build shared team presets with `createPixelPreset`
+- tune per-screen overrides with `mergePixelOptions`
+- map declarative masks with `createMaskConfig`
+
+Example:
+
+```tsx
+<PixelGridCanvas
+  width={900}
+  height={520}
+  preset="hero-image"
+  mask={{
+    type: "text",
+    text: "PIXEL",
+    centerX: 450,
+    centerY: 260
+  }}
+/>
+```
+
 ## Update: Overlay Pointer Events + External React Validation (v1.0.7)
 
 - `PixelCard` and `PixelSurface` now use `overlayPointerEvents="none"` by default.

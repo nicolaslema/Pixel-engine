@@ -44,9 +44,11 @@ export function PixelCard({
   ...canvasProps
 }: PixelCardProps) {
   const isGridCard =
-    "gridConfig" in canvasProps &&
-    typeof canvasProps.gridConfig === "object" &&
-    canvasProps.gridConfig !== null;
+    "gridConfig" in canvasProps ||
+    "preset" in canvasProps ||
+    "mask" in canvasProps ||
+    "rippleTrigger" in canvasProps ||
+    "onGridReady" in canvasProps;
 
   const mergedContainerStyle: CSSProperties = {
     ...surfaceStyle,

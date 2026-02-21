@@ -2,21 +2,11 @@
 
 High-performance 2D pixel simulation engine for browser apps and UI frameworks.
 
-## Features
-
-- Fixed-step engine loop and scene system
-- Renderer-agnostic core (`IRenderer`) with Canvas2D backend
-- Composable influence system (hover, ripple, noise, masks, morph)
-- Configurable `PixelGridEffect` with strict API (`hoverEffects`, `rippleEffects`, `breathing`)
-- Typed exports for framework integrations (React/Vue/Svelte wrappers)
-
 ## Status
 
-Stable API baseline (v1) for core + `PixelGridEffect`.
-Phase A (publish architecture hardening) completed.
-Phase B (API contract + docs consistency) completed.
-Phase C (runtime performance + benchmark baseline) completed.
-Phase D (React product layer) completed (PR-D1 + PR-D2 + PR-D3).
+- Stable API baseline for core runtime + `PixelGridEffect`
+- Phase A/B/C/D completed
+- Phase E completed (PR-E1 + PR-E2 + PR-E3)
 
 ## Install
 
@@ -32,203 +22,224 @@ Compatibility aggregate package:
 npm install pixel-engine
 ```
 
-## Quick Usage
+## Quick Start React (1 minute)
+
+```tsx
+import { PixelGridCanvas } from "@pixel-engine/react";
+
+export default function App() {
+  return (
+    <PixelGridCanvas
+      width={900}
+      height={520}
+      preset="card-soft"
+      onRipple={(e) => console.log("ripple", e.x, e.y)}
+    />
+  );
+}
+```
+
+Install + run:
+
+```bash
+npm install @pixel-engine/core @pixel-engine/effects @pixel-engine/react
+```
+
+## Core Quick Usage (vanilla)
 
 ```ts
 import { PixelEngine } from "@pixel-engine/core";
 import { PixelGridEffect } from "@pixel-engine/effects";
 
 const canvas = document.getElementById("app") as HTMLCanvasElement;
+const width = 1000;
+const height = 700;
 
-const engine = new PixelEngine({
-  canvas,
-  width: 1000,
-  height: 700
-});
-
-const grid = new PixelGridEffect(engine, 1000, 700, {
+const engine = new PixelEngine({ canvas, width, height });
+const grid = new PixelGridEffect(engine, width, height, {
   colors: ["#334155", "#475569", "#64748b"],
   gap: 6,
   expandEase: 0.08,
-  breathSpeed: 0.9,
-  canvasBackground: "transparent", // or "#0f172a", "rgba(0,0,0,0.35)", null
-  hoverEffects: { mode: "reactive", radius: 120, shape: "vignette" },
-  rippleEffects: { speed: 0.5, thickness: 48, strength: 28, maxRipples: 30 }
+  breathSpeed: 1
 });
 
 engine.addEntity(grid);
 engine.start();
-
-// Runtime control:
-grid.setCanvasBackground("#111827");
-grid.setCanvasBackground("transparent");
-grid.setCanvasBackground(null);
 ```
 
-## React Example
+## React Usage Guide
 
-```tsx
-import { useCallback } from "react";
-import { PixelGridCanvas } from "@pixel-engine/react";
-import catPngUrl from "./assets/cat.png";
+### 1) Simple usage (fastest start)
 
-export function PixelBackground() {
-  return (
-    <PixelGridCanvas
-      width={1000}
-      height={700}
-      onHoverStart={(event) => console.log("hover start", event.x, event.y)}
-      onHoverEnd={(event) => console.log("hover end", event.x, event.y)}
-      onRipple={(event) => console.log("ripple", event.x, event.y)}
-      gridConfig={{
-      colors: ["#334155", "#475569", "#64748b"],
-      gap: 6,
-      expandEase: 0.08,
-      breathSpeed: 1,
-      hoverEffects: { mode: "reactive", radius: 110, shape: "circle" },
-      rippleEffects: { speed: 0.5, thickness: 50, strength: 30, maxRipples: 25 },
-      imageMask: {
-        src: catPngUrl,
-        centerX: 500,
-        centerY: 350,
-        scale: 2,
-        sampleMode: "threshold"
-      }
-    }}
-    />
-  );
-}
-```
-
-## React Examples by Component
-
-### `PixelCanvas` (engine lifecycle only)
-
-```tsx
-import { useCallback } from "react";
-import { PixelEngine } from "@pixel-engine/core";
-import { PixelGridEffect } from "@pixel-engine/effects";
-import { PixelCanvas } from "@pixel-engine/react";
-
-export function CanvasOnly() {
-  const onReady = useCallback((engine: PixelEngine) => {
-    const grid = new PixelGridEffect(engine, 900, 520, {
-      colors: ["#334155", "#475569", "#64748b"],
-      gap: 7,
-      expandEase: 0.08,
-      breathSpeed: 1
-    });
-    engine.addEntity(grid);
-  }, []);
-
-  return <PixelCanvas width={900} height={520} onReady={onReady} />;
-}
-```
-
-### `PixelGridCanvas` (declarative `PixelGridEffect`)
+Use a preset, no manual engine wiring:
 
 ```tsx
 import { PixelGridCanvas } from "@pixel-engine/react";
 
-export function GridCanvas() {
+export function SimplePreset() {
+  return <PixelGridCanvas width={900} height={520} preset="card-soft" />;
+}
+```
+
+### 2) Simple config (preset + small override)
+
+Keep defaults but tune a few values:
+
+```tsx
+import { PixelGridCanvas } from "@pixel-engine/react";
+
+export function PresetWithOverrides() {
   return (
     <PixelGridCanvas
       width={900}
       height={520}
-      onHoverStart={(e) => console.log("hover start", e.x, e.y)}
-      onHoverEnd={(e) => console.log("hover end", e.x, e.y)}
-      onRipple={(e) => console.log("ripple", e.x, e.y)}
-      rippleTrigger="click"
+      preset="card-ripple"
       gridConfig={{
-        colors: ["#0f172a", "#1e293b", "#334155"],
-        gap: 7,
-        expandEase: 0.08,
-        breathSpeed: 1,
-        hoverEffects: { mode: "reactive", radius: 110, shape: "vignette" },
-        rippleEffects: { speed: 0.5, thickness: 50, strength: 30, maxRipples: 25 }
+        gap: 6,
+        rippleEffects: { maxRipples: 36 },
+        hoverEffects: { radius: 120 }
       }}
     />
   );
 }
 ```
 
-### `PixelSurface` (canvas + overlay content layer)
+### 3) Advanced config (callbacks + declarative mask)
+
+Use interaction callbacks and declarative `mask`:
 
 ```tsx
-import { useCallback } from "react";
-import { PixelEngine } from "@pixel-engine/core";
-import { PixelGridEffect } from "@pixel-engine/effects";
-import { PixelSurface } from "@pixel-engine/react";
+import catPngUrl from "./assets/cat.png";
+import { PixelGridCanvas } from "@pixel-engine/react";
 
-export function SurfaceWithOverlay() {
-  const onReady = useCallback((engine: PixelEngine) => {
-    const grid = new PixelGridEffect(engine, 900, 520, {
-      colors: ["#1e293b", "#334155", "#475569"],
-      gap: 8,
-      expandEase: 0.08,
-      breathSpeed: 1
-    });
-    engine.addEntity(grid);
-  }, []);
-
+export function AdvancedMask() {
   return (
-    <PixelSurface
+    <PixelGridCanvas
       width={900}
       height={520}
-      onReady={onReady}
-      overlayPointerEvents="none"
-      containerStyle={{ borderRadius: 18 }}
-      overlayStyle={{ color: "white", padding: 16 }}
-    >
-      <h2>Overlay Content</h2>
-      <p>Hover and click still work on the canvas.</p>
-    </PixelSurface>
+      preset="hero-image"
+      onHoverStart={(e) => console.log("hover start", e.x, e.y)}
+      onHoverEnd={(e) => console.log("hover end", e.x, e.y)}
+      onRipple={(e) => console.log("ripple", e.x, e.y)}
+      mask={{
+        type: "hybrid",
+        initialMask: "image",
+        image: { src: catPngUrl, centerX: 450, centerY: 240, scale: 2 },
+        text: { text: "PIXEL", centerX: 450, centerY: 280 },
+        autoMorph: { enabled: true, intervalMs: 900 }
+      }}
+      effectKey="hero-v1"
+    />
   );
 }
 ```
 
-## PixelCard in 10 lines
+### 4) Custom config (public helpers)
+
+Build reusable team presets:
+
+```tsx
+import catPngUrl from "./assets/cat.png";
+import {
+  PixelGridCanvas,
+  createPixelPreset,
+  mergePixelOptions,
+  createMaskConfig
+} from "@pixel-engine/react";
+
+const base = createPixelPreset("card-ripple");
+const tuned = mergePixelOptions(base, {
+  gap: 6,
+  hoverEffects: { shape: "vignette", radius: 125 },
+  rippleEffects: { maxRipples: 40 }
+});
+const mask = createMaskConfig({
+  type: "image",
+  src: catPngUrl,
+  centerX: 450,
+  centerY: 260,
+  scale: 2
+});
+
+export function CustomConfig() {
+  return <PixelGridCanvas width={900} height={520} gridConfig={{ ...tuned, ...mask }} />;
+}
+```
+
+### 5) Overlay content (`PixelCard` / `PixelSurface`)
+
+By default, overlay content does not block canvas interactions:
 
 ```tsx
 import { PixelCard } from "@pixel-engine/react";
 
-export function HeroCard() {
+export function Card() {
   return (
-    <PixelCard width={420} height={240} gridConfig={{ colors: ["#0f172a", "#1e293b"], gap: 7, expandEase: 0.08, breathSpeed: 1 }}>
+    <PixelCard width={420} height={240} preset="card-soft">
       <h3>Pixel Card</h3>
     </PixelCard>
   );
 }
 ```
 
-`PixelCard` now supports both modes:
-- engine mode: no `gridConfig` (raw engine canvas layer)
-- grid mode: provide `gridConfig` for declarative `PixelGridEffect`
-- overlay pointer events default to `none` (so hover/ripple keep working through text/content)
-- set `overlayPointerEvents="auto"` only if you need clickable UI on top
+- Default: `overlayPointerEvents="none"` (hover/ripple pass through)
+- Set `overlayPointerEvents="auto"` only when overlay UI must be clickable
 
-DX hardening:
-- `usePixelGridEffect` adds `effectKey` so inline config objects do not recreate effects accidentally.
-- change `effectKey` explicitly when you want to recreate the underlying `PixelGridEffect`.
+## When to use what
+
+- Use `preset` for the fastest setup.
+- Use `gridConfig` for low-level control.
+- Use `preset + gridConfig` for baseline + focused overrides.
+- Use helpers for reusable shared configs across multiple screens/components.
+
+## Preset Catalog
+
+- `minimal`: low-noise baseline for neutral backgrounds and subtle motion.
+- `card-soft`: soft reactive hover + breathing for cards/panels.
+- `card-ripple`: ripple-forward interactions for clickable UI surfaces.
+- `hero-image`: high-presence interactive style for image/text hero sections.
+  - Best with an image mask (`mask.image` or `gridConfig.imageMask`).
+
+Preset matrix:
+
+| Preset | Best for | Mask support | Interaction profile |
+|---|---|---|---|
+| `minimal` | neutral backgrounds | optional | subtle |
+| `card-soft` | cards/panels | optional | soft reactive hover |
+| `card-ripple` | clickable UI surfaces | optional | stronger ripple feedback |
+| `hero-image` | hero sections/showcases | recommended | stronger reactive + mask-oriented |
+
+## React Compatibility Notes
+
+- Rendering:
+  - SSR-safe initialization (`window` guards) is built in.
+  - Engine/effect creation happens after mount.
+- Assets:
+  - Use bundler URLs (`import imageUrl from "./assets/file.png"`).
+  - Avoid `"/src/..."` runtime paths.
+- Overlay interactions:
+  - `PixelSurface`/`PixelCard` default to `overlayPointerEvents="none"`.
+  - Set `overlayPointerEvents="auto"` for clickable overlay UI.
+- Effect lifecycle:
+  - Use `effectKey` when you want an intentional effect remount.
+  - Keep `effectKey` stable to avoid unnecessary remounts.
+- Mask guidance:
+  - `hero-image` should be paired with an image mask.
+  - `mask.type = "hybrid"` is recommended for text+image morph flows.
 
 ## External React Validation
 
-- Real integration was validated in an external React project (Vite + TS) using local package installs.
-- Result: positive.
-- Verified:
-  - `PixelCanvas` working correctly
-  - `PixelGridCanvas` with hover/ripple callbacks
-  - `PixelCard` overlay does not block events by default (`overlayPointerEvents="none"`)
+Validated in an external React project (Vite + TypeScript) with local package installation:
+- `PixelCanvas`
+- `PixelGridCanvas`
+- `PixelSurface`
+- `PixelCard`
 
-Compatibility aggregate import remains available:
+## Package Split
 
-```ts
-import { PixelEngine, PixelGridEffect } from "pixel-engine";
-```
-
-Use bundled asset URLs (`import img from "./asset.png"`). Do not use `"/src/..."` paths in app projects.
-`imageMask` and `textMask` are optional; you can run the effect with no masks.
-`canvasBackground` is the recommended way to control canvas clear color from effect config.
+- `@pixel-engine/core`: runtime primitives
+- `@pixel-engine/effects`: `PixelGridEffect`, influences, masks
+- `@pixel-engine/react`: hooks/components + presets/declarative helpers
 
 ## Architecture
 
@@ -241,9 +252,19 @@ Use bundled asset URLs (`import img from "./asset.png"`). Do not use `"/src/..."
 
 ## Scripts
 
+- `npm run test`
+- `npm run build`
+- `npm run build:packages`
+- `npm run build:all`
+- `npm run typecheck`
+- `npm run verify`
+- `npm run release:check`
+
+Detailed scripts:
+
 - `npm run dev`: runs playground with Vite.
 - `npm run test`: runs Vitest.
-- `npm run build`: builds distributable library with `tsup` (ESM/CJS/types).
+- `npm run build`: builds distributable library with tsup (ESM/CJS/types).
 - `npm run typecheck`: TypeScript validation (`tsc --noEmit`).
 - `npm run build:packages`: builds `@pixel-engine/core`, `@pixel-engine/effects`, and `@pixel-engine/react`.
 - `npm run build:all`: builds aggregate + split packages.
@@ -252,20 +273,33 @@ Use bundled asset URLs (`import img from "./asset.png"`). Do not use `"/src/..."
 - `npm run smoke:consumer`: validates package consumption from local tarballs.
 - `npm run release:check`: verify + pack dry-runs + consumer smoke test.
 - `npm run build:playground`: builds playground app with Vite.
+
+References:
+
 - API reference and examples: `API.md`
 - Release notes: `CHANGELOG.md`
 - Migration guide: `MIGRATION.md`
 - Release workflow: `RELEASE.md`
 - Benchmark notes: `BENCHMARKS.md`
 
-## Package Split
+## Package Split (Detailed)
 
 - `@pixel-engine/core`: runtime primitives (engine, loop, scene, renderers, input, base grid helpers).
 - `@pixel-engine/effects`: high-level effects (`PixelGridEffect`), influences, masks.
 - `@pixel-engine/react`: React hook/components (`usePixelEngine`, `usePixelGridEffect`, `PixelCanvas`, `PixelGridCanvas`, `PixelSurface`, `PixelCard`).
 
-Benefits:
-- smaller dependency surface per use-case
-- cleaner boundaries and maintainability
-- easier wrappers for React/Vue/Svelte
-- clearer long-term API ownership
+React component matrix:
+
+| Component | Engine lifecycle | Declarative grid | Overlay layer | Best use case |
+|---|---|---|---|---|
+| `PixelCanvas` | yes | no | no | low-level custom engine wiring |
+| `PixelGridCanvas` | yes | yes | no | fastest PixelGrid integration |
+| `PixelSurface` | yes | via `onReady` | yes | canvas + content composition |
+| `PixelCard` | yes | yes (`preset`/`gridConfig`) | yes | reusable UI cards with pixel effects |
+
+## More docs
+
+- API details: `API.md`
+- Migration notes: `MIGRATION.md`
+- Release workflow: `RELEASE.md`
+- Changelog: `CHANGELOG.md`

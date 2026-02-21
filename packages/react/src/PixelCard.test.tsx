@@ -140,4 +140,38 @@ describe("PixelCard", () => {
 
     cleanupHost(container, root);
   });
+
+  it("uses grid mode when preset is provided without gridConfig", () => {
+    (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    const createEngine = vi.fn(() => ({
+      addEntity: vi.fn(),
+      removeEntity: vi.fn(),
+      start: vi.fn(),
+      destroy: vi.fn(),
+      resize: vi.fn()
+    })) as never;
+    const createGridEffect = vi.fn(() => ({
+      triggerRipple: vi.fn()
+    })) as never;
+
+    const { container, root } = createHost();
+    act(() => {
+      root.render(
+        <PixelCard
+          width={320}
+          height={180}
+          preset="card-soft"
+          createEngine={createEngine}
+          createGridEffect={createGridEffect}
+        >
+          <span>Preset content</span>
+        </PixelCard>
+      );
+    });
+
+    expect(container.querySelector("canvas")).not.toBeNull();
+    expect(createGridEffect).toHaveBeenCalledTimes(1);
+
+    cleanupHost(container, root);
+  });
 });

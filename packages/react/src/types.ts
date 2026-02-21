@@ -3,12 +3,24 @@ import type { PixelEngine, PixelEngineOptions, QualityLevel } from "@pixel-engin
 import type {
   PixelGridConfig,
   PixelGridEffect,
-  PixelGridInfluenceOptions
+  PixelGridInfluenceOptions,
+  PixelGridImageMaskConfig,
+  PixelGridTextMaskConfig,
+  InitialMask
 } from "@pixel-engine/effects";
 
 export type ResizeMode = "observer" | "window" | "none";
 export type FitMode = "none" | "client";
 export type RippleTriggerMode = "click" | "pointerdown" | "none";
+export type PixelGridPresetName = "minimal" | "card-soft" | "card-ripple" | "hero-image";
+export type PixelGridPresetMaskSupport = "none" | "optional" | "recommended";
+
+export interface PixelGridPresetDefinition {
+  name: PixelGridPresetName;
+  description: string;
+  recommendedFor: string;
+  maskSupport: PixelGridPresetMaskSupport;
+}
 
 export interface PixelPointerEventPayload {
   x: number;
@@ -43,8 +55,30 @@ export interface PixelCanvasProps extends UsePixelEngineOptions {
   style?: React.CSSProperties;
 }
 
+export interface TextMaskInput extends PixelGridTextMaskConfig {
+  type: "text";
+  text: string;
+}
+
+export interface ImageMaskInput extends PixelGridImageMaskConfig {
+  type: "image";
+  src: string;
+}
+
+export interface HybridMaskInput {
+  type: "hybrid";
+  text: Omit<TextMaskInput, "type">;
+  image: Omit<ImageMaskInput, "type">;
+  initialMask?: InitialMask;
+  autoMorph?: PixelGridConfig["autoMorph"];
+}
+
+export type PixelGridMaskInput = TextMaskInput | ImageMaskInput | HybridMaskInput;
+
 export interface UsePixelGridEffectOptions extends UsePixelEngineOptions {
-  gridConfig: PixelGridConfig;
+  gridConfig?: Partial<PixelGridConfig>;
+  preset?: PixelGridPresetName;
+  mask?: PixelGridMaskInput;
   influenceOptions?: PixelGridInfluenceOptions;
   effectKey?: string | number;
   gridWidth?: number;

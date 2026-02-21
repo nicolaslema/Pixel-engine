@@ -147,4 +147,61 @@ describe("usePixelGridEffect", () => {
 
     cleanupHost(container, root);
   });
+
+  it("supports preset + declarative mask without explicit gridConfig", () => {
+    (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
+    const engine = {
+      addEntity: vi.fn(),
+      removeEntity: vi.fn(),
+      start: vi.fn(),
+      destroy: vi.fn(),
+      resize: vi.fn()
+    };
+
+    const createEngine = vi.fn(() => engine);
+    const createGridEffect = vi.fn(() => ({
+      triggerRipple: vi.fn()
+    }));
+
+    function TestComponent() {
+      const { canvasRef } = usePixelGridEffect({
+        width: 300,
+        height: 180,
+        preset: "hero-image",
+        mask: {
+          type: "hybrid",
+          initialMask: "image",
+          image: {
+            src: "/cat.png",
+            centerX: 150,
+            centerY: 90,
+            scale: 1.5
+          },
+          text: {
+            text: "HELLO",
+            centerX: 150,
+            centerY: 95
+          }
+        },
+        createEngine: createEngine as never,
+        createGridEffect: createGridEffect as never
+      });
+      return <canvas ref={canvasRef} />;
+    }
+
+    const { container, root } = createHost();
+    act(() => {
+      root.render(<TestComponent />);
+    });
+
+    expect(createGridEffect).toHaveBeenCalledTimes(1);
+    const configArg = createGridEffect.mock.calls[0][3];
+    expect(configArg.colors.length).toBeGreaterThan(0);
+    expect(configArg.textMask?.text).toBe("HELLO");
+    expect(configArg.imageMask?.src).toBe("/cat.png");
+    expect(configArg.gap).toBeGreaterThan(0);
+
+    cleanupHost(container, root);
+  });
 });

@@ -2,6 +2,74 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.0.10] - 2026-02-21
+
+### Added
+- Completed PR-E3 for Phase E documentation matrix and compatibility guidance.
+- Added preset matrix and component capability matrix in docs.
+- Added React compatibility notes for:
+  - SSR behavior
+  - asset URL handling
+  - overlay pointer-event layering
+  - `effectKey` remount strategy
+
+### Changed
+- React documentation reorganized for progressive adoption:
+  - simple usage
+  - simple config
+  - advanced config
+  - custom config with helpers
+- Phase E status now marked completed in docs.
+
+## [1.0.9] - 2026-02-21
+
+### Added
+- Completed PR-E2 for Phase E preset tuning and validation hardening.
+- New preset catalog helper APIs:
+  - `listPixelPresets()`
+  - `getPixelPresetDefinition(name)`
+- Preset metadata (description, recommended use, mask support guidance).
+
+### Changed
+- `resolveGridConfigInput` now validates and sanitizes nested config values:
+  - clamps invalid ranges (`deactivate`, opacities, etc.)
+  - enforces positive/non-negative numeric constraints
+  - normalizes ripple limits (`maxRipples >= 1`)
+- Added context warnings for preset usage (e.g. `hero-image` without image mask).
+- React docs updated with clearer preset catalog guidance.
+
+### Tests
+- Extended config-helper tests to cover:
+  - preset metadata API
+  - hero-image warning path
+  - nested value sanitization/clamping behavior
+
+## [1.0.8] - 2026-02-21
+
+### Added
+- Started Phase E with PR-E1 foundation for declarative authoring in `@pixel-engine/react`.
+- Preset system:
+  - `minimal`
+  - `card-soft`
+  - `card-ripple`
+  - `hero-image`
+- Declarative mask API:
+  - `mask.type = "text" | "image" | "hybrid"`
+  - helper export `createMaskConfig(mask)`
+- New helper exports:
+  - `createPixelPreset(name, overrides?)`
+  - `mergePixelOptions(base, override)`
+  - `resolveGridConfigInput(...)`
+
+### Changed
+- `usePixelGridEffect` now supports `preset` + `mask` and can run without explicit `gridConfig`.
+- `PixelCard` grid-mode detection now supports preset-driven usage (no `gridConfig` required).
+- Added development-time validation warnings with safe fallback defaults for invalid config values.
+
+### Tests
+- Added coverage for preset/mask normalization and fallback behavior.
+- Added coverage for preset-only `usePixelGridEffect` and preset-driven `PixelCard` mode.
+
 ## [1.0.7] - 2026-02-21
 
 ### Added

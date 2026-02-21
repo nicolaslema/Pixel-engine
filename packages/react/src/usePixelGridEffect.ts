@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { PixelGridEffect } from "@pixel-engine/effects";
 import { usePixelEngine } from "./usePixelEngine";
 import { UsePixelGridEffectOptions, UsePixelGridEffectResult } from "./types";
+import { resolveGridConfigInput } from "./grid-config";
 
 function toLocalCoords(canvas: HTMLCanvasElement, event: MouseEvent | PointerEvent) {
   const rect = canvas.getBoundingClientRect();
@@ -18,6 +19,8 @@ export function usePixelGridEffect(options: UsePixelGridEffectOptions): UsePixel
     height,
     gridWidth,
     gridHeight,
+    preset,
+    mask,
     gridConfig,
     influenceOptions,
     effectKey = "default",
@@ -34,20 +37,29 @@ export function usePixelGridEffect(options: UsePixelGridEffectOptions): UsePixel
     height,
     ...engineOptions
   });
+  const resolvedGridConfig = useMemo(
+    () =>
+      resolveGridConfigInput({
+        preset,
+        gridConfig,
+        mask
+      }),
+    [gridConfig, mask, preset]
+  );
   const gridRef = useRef<PixelGridEffect | null>(null);
   const onGridReadyRef = useRef(onGridReady);
   const onRippleRef = useRef(onRipple);
   const createGridEffectRef = useRef(createGridEffect);
-  const gridConfigRef = useRef(gridConfig);
+  const gridConfigRef = useRef(resolvedGridConfig);
   const influenceOptionsRef = useRef(influenceOptions);
 
   useEffect(() => {
     onGridReadyRef.current = onGridReady;
     onRippleRef.current = onRipple;
     createGridEffectRef.current = createGridEffect;
-    gridConfigRef.current = gridConfig;
+    gridConfigRef.current = resolvedGridConfig;
     influenceOptionsRef.current = influenceOptions;
-  }, [createGridEffect, gridConfig, influenceOptions, onGridReady, onRipple]);
+  }, [createGridEffect, influenceOptions, onGridReady, onRipple, resolvedGridConfig]);
 
   useEffect(() => {
     if (!engine) return;

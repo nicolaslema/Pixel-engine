@@ -1,4 +1,6 @@
 export * from "./types";
+export * from "./presets";
+export * from "./grid-config";
 export * from "./usePixelEngine";
 export * from "./usePixelGridEffect";
 export * from "./PixelCanvas";
