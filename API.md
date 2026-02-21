@@ -473,7 +473,7 @@ export function SurfaceWithOverlay() {
   return (
     <PixelSurface width={900} height={520} onReady={onReady} overlayPointerEvents="none">
       <h2>Overlay Content</h2>
-      <p>Hover y click siguen funcionando en el canvas.</p>
+      <p>Hover and click still work on the canvas.</p>
     </PixelSurface>
   );
 }
@@ -481,8 +481,8 @@ export function SurfaceWithOverlay() {
 
 ## External React Validation
 
-- Integracion validada en un proyecto React externo (Vite + TypeScript) usando instalacion local de paquetes.
-- Resultado: positivo para `PixelCanvas`, `PixelGridCanvas`, `PixelSurface` y `PixelCard`.
+- Integration validated in an external React project (Vite + TypeScript) using local package installation.
+- Positive result for `PixelCanvas`, `PixelGridCanvas`, `PixelSurface`, and `PixelCard`.
 
 ## Vue Wrapper Pattern
 

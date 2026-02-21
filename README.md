@@ -181,7 +181,7 @@ export function SurfaceWithOverlay() {
       overlayStyle={{ color: "white", padding: 16 }}
     >
       <h2>Overlay Content</h2>
-      <p>Hover y click siguen funcionando en el canvas.</p>
+      <p>Hover and click still work on the canvas.</p>
     </PixelSurface>
   );
 }
@@ -213,12 +213,12 @@ DX hardening:
 
 ## External React Validation
 
-- Se validó integración real en un proyecto React externo (Vite + TS) instalando paquetes locales.
-- Resultado: positivo.
-- Verificado:
-  - `PixelCanvas` funcionando
-  - `PixelGridCanvas` con callbacks hover/ripple
-  - `PixelCard`/overlay sin bloquear eventos por defecto (`overlayPointerEvents="none"`)
+- Real integration was validated in an external React project (Vite + TS) using local package installs.
+- Result: positive.
+- Verified:
+  - `PixelCanvas` working correctly
+  - `PixelGridCanvas` with hover/ripple callbacks
+  - `PixelCard` overlay does not block events by default (`overlayPointerEvents="none"`)
 
 Compatibility aggregate import remains available:
 

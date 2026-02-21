@@ -4,10 +4,10 @@ This guide covers migration to the formal v1 stable baseline and the new package
 
 ## Update: Overlay Pointer Events + External React Validation (v1.0.7)
 
-- `PixelCard` y `PixelSurface` ahora usan `overlayPointerEvents="none"` por defecto.
-- Esto evita que el contenido overlay bloquee hover/click/ripple del canvas.
-- Si necesitas UI clickeable encima, usa `overlayPointerEvents="auto"`.
-- Se validó integración en proyecto React externo (Vite + TS) con resultado positivo.
+- `PixelCard` and `PixelSurface` now use `overlayPointerEvents="none"` by default.
+- This prevents overlay content from blocking canvas hover/click/ripple interactions.
+- If you need clickable UI on top, set `overlayPointerEvents="auto"`.
+- Integration was validated in an external React project (Vite + TS) with positive results.
 
 ## Update: React Product Layer Completion + PixelCard DX (v1.0.6)
 
